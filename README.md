@@ -8,7 +8,7 @@ La V0.1 fait exactement le travail attendu.
 - Ça relance le container docker
 
 L'URL est accessible sur le port 8899 de la machine
-http://IP_DE_LA_MACHINE;8899
+http://IP_DE_LA_MACHINE:8899
 
 ``
 Structure du projet
