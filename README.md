@@ -24,19 +24,19 @@ nanobot-manager/
 
 ## Initialisation ##
 
-1. Créer le réseau docker
+1- Créer le réseau docker
 
 ```
 docker network create socket-proxy-network
 ```
 
-1. Valider la création de l'image du container
+2- Valider la création de l'image du container
 
 ```
 docker compose -f $PWD/compose.yaml build
 ```
 
-1. Lancer le container en autonome
+3- Lancer le container en autonome
 
 ```
 docker compose -f $PWD/compose.yaml up -d
