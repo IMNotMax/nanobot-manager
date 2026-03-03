@@ -11,11 +11,11 @@ services:
     volumes:
       - /opt/stacks/nanobot/config:/opt/stacks/nanobot/config
     environment:
-      - CONFIG_PATH=/opt/stacks/nanobot/config/config.json
-      - OLLAMA_URL=http://192.168.2.220:11434
-      - DOCKER_PROXY_URL=http://192.168.2.220:2375
+      - CONFIG_PATH=${PATH_DU_CONFIG.JSON_DE_NANOBOT} # par exemple /opt/stacks/nanobot/config/config.json
+      - OLLAMA_URL=${OLLAMA_URL} # par exemple http://192.168.2.220:11434
+      - DOCKER_PROXY_URL=http://socket-proxy:2375
     networks:
-      - socket-proxy
+      - socket-proxy-network
     restart: unless-stopped
   socket-proxy:
     image: lscr.io/linuxserver/socket-proxy:latest
@@ -57,7 +57,7 @@ services:
     tmpfs:
       - /run
     networks:
-      - socket-proxy
+      - socket-proxy-network
 networks:
-  socket-proxy:
+  socket-proxy-network:
     external: true
