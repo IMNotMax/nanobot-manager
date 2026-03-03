@@ -1,0 +1,63 @@
+services:
+# soit on garde le compose.yaml tel quu'il est, soit on intégre cela dans le compose.yaml de nanobot
+# l'avantage de l'intégrer dans le compose.yaml de nanobot, c'est que ça simplifie la gestion des réseaux et des volumes
+# et surtout on peut mettre en dépendances nanobot-manager et nanobot-gateway
+
+  nanobot-manager:
+    build: ./nanobot-manager # mettre ./ ici si le compose.yaml est dans le même folder que le Dockerfile
+    container_name: nanobot-manager
+    ports:
+      - "8899:8899"
+    volumes:
+      - /opt/stacks/nanobot/config:/opt/stacks/nanobot/config
+    environment:
+      - CONFIG_PATH=/opt/stacks/nanobot/config/config.json
+      - OLLAMA_URL=http://192.168.2.220:11434
+      - DOCKER_PROXY_URL=http://192.168.2.220:2375
+    networks:
+      - socket-proxy
+    restart: unless-stopped
+  socket-proxy:
+    image: lscr.io/linuxserver/socket-proxy:latest
+    container_name: socket-proxy
+    environment:
+      - TZ=America/Toronto
+      - ALLOW_START=1
+      - ALLOW_STOP=1
+      - ALLOW_RESTARTS=1
+      - AUTH=1
+      - BUILD=0
+      - COMMIT=0
+      - CONFIGS=1
+      - CONTAINERS=1
+      - DISABLE_IPV6=0
+      - DISTRIBUTION=0
+      - EVENTS=1
+      - EXEC=1
+      - IMAGES=1
+      - INFO=0
+      - LOG_LEVEL=info
+      - NETWORKS=1
+      - NODES=0
+      - PING=1
+      - PLUGINS=0
+      - POST=0
+      - SECRETS=0
+      - SERVICES=0
+      - SESSION=0
+      - SWARM=1
+      - SYSTEM=0
+      - TASKS=0
+      - VERSION=1
+      - VOLUMES=0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /run
+    networks:
+      - socket-proxy
+networks:
+  socket-proxy:
+    external: true
