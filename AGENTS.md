@@ -34,19 +34,43 @@ docker compose -f compose.yaml up -d
 docker compose -f compose.yaml down
 ```
 
-### Running a Single Test
-*(No test files exist yet - add tests to nanobot-manager/tests/)  
-Example structure coming soon:
+### Linting & Formatting
 ```bash
+# Format code with ruff
+ruff format nanobot-manager/
+
+# Check lint issues
+ruff check nanobot-manager/
+```
+
+### Testing
+```bash
+# Run tests (using pytest)
+pytest nanobot-manager/tests/
+
+# Run a single test file
+pytest nanobot-manager/tests/test_app.py
+
+# Run a single test function
+pytest nanobot-manager/tests/test_app.py::test_api_models -v
+```
+
+**Test structure** - place tests in `nanobot-manager/tests/`:
+```python
+import unittest
+from flask import Flask
+from app import app
+
 class TestApp(unittest.TestCase):
     def setUp(self):
-        self.app = create_app()
+        self.app = app
         self.client = self.app.test_client()
 
     def test_api_models(self):
         response = self.client.get('/api/models')
         assert response.status_code == 200
 ```
+
 ---
 
 ## Code Style Guidelines
@@ -79,8 +103,8 @@ def get_ollama_models(timeout: float = 5) -> list[str]:
 ### Naming Conventions
 - **Functions/methods**: snake_case (e.g., `read_config`, `get_ollama_models`)
 - **Classes**: PascalCase (e.g., `ConfigManager`)
-- **Constants**: UPPER_SNAKE_CASE (e.g., `CONFIG_PATH`)
-- **Booleans**: camelCase for variables, PascalCase for constants (e.g., `is_configured`, `MAX_RETRIES`)
+- **Constants**: UPPER_SNAKE_CASE (e.g., `CONFIG_PATH`, `OLLAMA_URL`)
+- **Variables**: snake_case (e.g., `is_configured`, `container_id`)
 - **Private**: single underscore prefix (e.g., `_internal_helper`)
 
 ### Error Handling Best Practices
@@ -95,6 +119,7 @@ except requests.ConnectionError:
     logging.error("Connection failed")
 except Exception as e:  # Catch-all for unexpected errors
     logging.exception("Unexpected error occurred")
+    raise  # Re-raise if recovery isn't possible
 ```
 
 Always include informative error messages to clients:
@@ -110,11 +135,15 @@ def api_endpoint():
 ### Input Validation
 Validate all incoming data before processing:
 ```python
-def update_config(data: dict) -> Tuple[bool, Union[str, None], int]:
-    if not data.get("model").strip() or not data.get("provider").strip():
-        return False, "Champs requis", 400
+def update_config(data: dict) -> dict:
+    model = data.get("model", "").strip()
+    provider = data.get("provider", "").strip()
+    
+    if not model or not provider:
+        return {"success": False, "error": "Champs requis"}, 400
     
     # Proceed with updates...
+    return {"success": True, "message": "Config updated"}
 ```
 
 ### Return Type Consistency
@@ -158,18 +187,10 @@ bad = f"{value}"  # if value is already a string
 
 ---
 
-## Testing Guidelines (TODO)
-
-1. Place tests in `nanobot-manager/tests/`
-2. Use `pytest` with fixtures for Flask client
-3. Mock external services (Ollama, Docker API)
-4. Add integration tests behind environment flag
-5. CI should run test suite before merge
-
----
-
 ## Documentation
 
 - README.md: User-facing documentation
 - This file: Agent development guidelines
 - Function docstrings: Required for public APIs
+
+**Testing**: Tests should mock external services (Ollama, Docker API) and aim for >80% coverage on API endpoints.
