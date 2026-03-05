@@ -13,7 +13,7 @@ services:
     volumes:
       - ~/.nanobot:/root/.nanobot
     environment:
-      - CONFIG_PATH=~/.nanobot/config.json
+      - CONFIG_PATH=/root/.nanobot/config.json
       - OLLAMA_URL=http://192.168.2.220:11434
       - DOCKER_PROXY_URL=http://socket-proxy-nbt-mngr:2375
     networks:

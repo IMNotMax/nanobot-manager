@@ -5,7 +5,7 @@ COPY /app/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY /app/app.py .
-COPY templates/ templates/
+COPY /app/templates/ templates/
 
 EXPOSE 8899
 CMD ["python", "app.py"]
