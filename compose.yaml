@@ -4,7 +4,9 @@ services:
   # et surtout on peut mettre en dépendances nanobot-manager et nanobot-gateway
 
   nanobot-manager:
-    build: ./app # mettre ./ ici si le compose.yaml est dans le même folder que le Dockerfile
+    build: 
+      context: .
+      dockerfile: Dockerfile
     container_name: nanobot-manager
     ports:
       - "8899:8899"
@@ -13,13 +15,13 @@ services:
     environment:
       - CONFIG_PATH=/nanobot-config/config.json
       - OLLAMA_URL=http://192.168.2.220:11434
-      - DOCKER_PROXY_URL=http://docker-socket-proxy:2375
+      - DOCKER_PROXY_URL=http://socket-proxy-nbt-mngr:2375
     networks:
-      - socket-proxy-network
+      - socket-proxy-nbt-mngr-network
     restart: unless-stopped
   socket-proxy:
     image: lscr.io/linuxserver/socket-proxy:latest
-    container_name: socket-proxy
+    container_name: socket-proxy-nbt-mngr
     environment:
       - TZ=America/Toronto
       - ALLOW_START=1
@@ -57,7 +59,7 @@ services:
     tmpfs:
       - /run
     networks:
-      - socket-proxy-network
+      - socket-proxy-nbt-mngr-network
 networks:
-  socket-proxy-network:
+  socket-proxy-nbt-mngr-network:
     external: true
