@@ -1,19 +1,19 @@
 services:
-# soit on garde le compose.yaml tel quu'il est, soit on intégre cela dans le compose.yaml de nanobot
-# l'avantage de l'intégrer dans le compose.yaml de nanobot, c'est que ça simplifie la gestion des réseaux et des volumes
-# et surtout on peut mettre en dépendances nanobot-manager et nanobot-gateway
+  # soit on garde le compose.yaml tel quu'il est, soit on intégre cela dans le compose.yaml de nanobot
+  # l'avantage de l'intégrer dans le compose.yaml de nanobot, c'est que ça simplifie la gestion des réseaux et des volumes
+  # et surtout on peut mettre en dépendances nanobot-manager et nanobot-gateway
 
   nanobot-manager:
-    build: ./nanobot-manager # mettre ./ ici si le compose.yaml est dans le même folder que le Dockerfile
+    build: ./app # mettre ./ ici si le compose.yaml est dans le même folder que le Dockerfile
     container_name: nanobot-manager
     ports:
       - "8899:8899"
     volumes:
-      - /opt/stacks/nanobot/config:/opt/stacks/nanobot/config
+      - /opt/stacks/nanobot/config:/nanobot-config
     environment:
-      - CONFIG_PATH=${PATH_DU_CONFIG.JSON_DE_NANOBOT} # par exemple /opt/stacks/nanobot/config/config.json
-      - OLLAMA_URL=${OLLAMA_URL} # par exemple http://192.168.2.220:11434
-      - DOCKER_PROXY_URL=http://socket-proxy:2375
+      - CONFIG_PATH=/nanobot-config/config.json
+      - OLLAMA_URL=http://192.168.2.220:11434
+      - DOCKER_PROXY_URL=http://docker-socket-proxy:2375
     networks:
       - socket-proxy-network
     restart: unless-stopped
