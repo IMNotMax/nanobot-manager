@@ -12,9 +12,9 @@ Nanobot Manager permet de configurer **trois types d'agents** de manière indép
 - **🔧 Coder** - Optimisé pour la génération et l'analyse de code
 - **👁️ Vision** - Optimisé pour l'analyse d'images et la vision par ordinateur
 
-![Vue Default](imges/Default.png "Vue Default")
-![Vue Coder](imges/Coder.png "Vue Coder")
-![Vue Vision](imges/Vision.png "Vue Vision")
+![Vue Default](img/Default.png "Vue Default")
+![Vue Coder](img/Coder.png "Vue Coder")
+![Vue Vision](img/Vision.png "Vue Vision")
 
 ### Paramètres Configurables
 
