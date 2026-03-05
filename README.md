@@ -50,25 +50,25 @@ Nanobot Manager permet de configurer **trois types d'agents** de manière indép
 
 ### Démarrage
 
-1. **Créer le réseau Docker** (si pas déjà fait)
+0 **Créer le réseau Docker** (si pas déjà fait et si activé dans le compose.yaml)
 
 ```bash
-docker network create socket-proxy-network
+docker network create socket-proxy-nbt-mngr-network
 ```
 
-1. **Construire l'image**
+1 **Construire l'image**
 
 ```bash
-docker compose -f compose.yaml build
+docker compose build --no-cache
 ```
 
-1. **Lancer le container**
+2 **Lancer le container**
 
 ```bash
-docker compose -f compose.yaml up -d
+docker compose up -d
 ```
 
-1. **Accéder à l'interface**
+3 **Accéder à l'interface**
 
 ```
 http://localhost:8899
