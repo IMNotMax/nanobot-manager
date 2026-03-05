@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Nanobot Manager</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card {
+            background: #1e293b;
+            border-radius: 16px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 520px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #38bdf8;
+            margin-bottom: 0.25rem;
+        }
+
+        .subtitle {
+            color: #64748b;
+            font-size: 0.875rem;
+            margin-bottom: 2rem;
+        }
+
+        .current-badge {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 2rem;
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        .current-badge span {
+            color: #38bdf8;
+            font-weight: 600;
+        }
+
+        .field {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        select,
+        input {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 0.6rem 0.75rem;
+            color: #e2e8f0;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        select:focus,
+        input:focus {
+            border-color: #38bdf8;
+        }
+
+        .model-row {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .model-row select {
+            flex: 1;
+        }
+
+        .model-row input {
+            flex: 1;
+            display: none;
+        }
+
+        .toggle-btn {
+            background: #334155;
+            border: none;
+            color: #94a3b8;
+            padding: 0 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+
+        .toggle-btn:hover {
+            background: #475569;
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px solid #334155;
+            margin: 1.5rem 0;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #0ea5e9;
+            color: white;
+            margin-bottom: 0.75rem;
+        }
+
+        .btn-primary:hover {
+            background: #38bdf8;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #ef4444;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .toast {
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .toast.success {
+            background: #064e3b;
+            color: #6ee7b7;
+            border: 1px solid #065f46;
+        }
+
+        .toast.error {
+            background: #450a0a;
+            color: #fca5a5;
+            border: 1px solid #7f1d1d;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #334155;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: #64748b;
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .tab-btn.active {
+            color: #38bdf8;
+            border-bottom-color: #38bdf8;
+        }
+
+        .tab-btn:hover {
+            color: #94a3b8;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .token-row {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .token-row select {
+            flex: 1;
+        }
+
+        .token-info {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 0.35rem;
+            margin-left: 0.05rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h1>⚙️ Nanobot Manager</h1>
+        <p class="subtitle">Gérez la configuration des modèles IA de Nanobot</p>
+
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('defaults')">Par Défaut</button>
+            <button class="tab-btn" onclick="switchTab('coder')">🔧 Coder</button>
+            <button class="tab-btn" onclick="switchTab('vision')">👁️ Vision</button>
+        </div>
+
+        <!-- Default Agent Tab -->
+        <div id="defaults" class="tab-content active">
+            <div class="current-badge">
+                Config actuelle — Provider : <span id="cur-provider">{{ current_provider }}</span> &nbsp;|&nbsp; Modèle :
+                <span id="cur-model">{{ current_model }}</span>
+            </div>
+
+            <div class="field">
+                <label>Provider</label>
+                <select id="provider">
+                    <option value="custom" {% if current_provider=='custom' %}selected{% endif %}>custom (Ollama local)</option>
+                    <option value="openai" {% if current_provider=='openai' %}selected{% endif %}>openai</option>
+                    <option value="anthropic" {% if current_provider=='anthropic' %}selected{% endif %}>anthropic</option>
+                    <option value="openrouter" {% if current_provider=='openrouter' %}selected{% endif %}>openrouter</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label>Modèle</label>
+                <div class="model-row">
+                    <select id="model-select">
+                        {% for m in ollama_models %}
+                        <option value="{{ m }}" {% if m==current_model %}selected{% endif %}>{{ m }}</option>
+                        {% endfor %}
+                        <option value="__manual__">✏️ Saisir manuellement...</option>
+                    </select>
+                    <input type="text" id="model-manual" placeholder="ex: gpt-4o" value="{{ current_model }}">
+                    <button class="toggle-btn" id="toggle-mode" onclick="toggleManual()">Manuel</button>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" id="btn-save" onclick="saveConfig()">💾 Sauvegarder la configuration</button>
+        </div>
+
+        <!-- Coder Agent Tab -->
+        <div id="coder" class="tab-content">
+            <div class="current-badge">
+                Config Coder — Provider : <span id="coder-cur-provider">—</span> &nbsp;|&nbsp; Modèle :
+                <span id="coder-cur-model">—</span>
+            </div>
+
+            <div class="field">
+                <label>Provider</label>
+                <select id="coder-provider">
+                    <option value="custom">custom (Ollama local)</option>
+                    <option value="openai">openai</option>
+                    <option value="anthropic">anthropic</option>
+                    <option value="openrouter">openrouter</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label>Modèle</label>
+                <input type="text" id="coder-model" placeholder="ex: qwen3.5:9b-16k">
+            </div>
+
+            <div class="field">
+                <label>Contexte (maxTokens)</label>
+                <div class="token-row">
+                    <select id="coder-tokens">
+                        <option value="2048">2K (Conversation rapide)</option>
+                        <option value="4096">4K (Standard)</option>
+                        <option value="8192">8K (Code long)</option>
+                        <option value="16384" selected>16K (Code complet)</option>
+                        <option value="32768">32K (Très long)</option>
+                        <option value="65536">64K (Ultra long)</option>
+                        <option value="131072">128K (Maximum)</option>
+                        <option value="__manual__">✏️ Personnalisé...</option>
+                    </select>
+                </div>
+                <input type="number" id="coder-tokens-manual" min="512" step="512" style="display: none; margin-top: 0.5rem;" placeholder="Saisir une valeur personnalisée">
+                <p class="token-info">Les modèles plus grands acceptent un contexte plus important.</p>
+            </div>
+
+            <button class="btn btn-primary" id="btn-coder-save" onclick="saveCoderConfig()">💾 Sauvegarder Coder</button>
+        </div>
+
+        <!-- Vision Agent Tab -->
+        <div id="vision" class="tab-content">
+            <div class="current-badge">
+                Config Vision — Provider : <span id="vision-cur-provider">—</span> &nbsp;|&nbsp; Modèle :
+                <span id="vision-cur-model">—</span>
+            </div>
+
+            <div class="field">
+                <label>Provider</label>
+                <select id="vision-provider">
+                    <option value="custom">custom (Ollama local)</option>
+                    <option value="openai">openai</option>
+                    <option value="anthropic">anthropic</option>
+                    <option value="openrouter">openrouter</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label>Modèle</label>
+                <input type="text" id="vision-model" placeholder="ex: llava ou gpt-4-vision">
+            </div>
+
+            <div class="field">
+                <label>Contexte (maxTokens) - Optionnel</label>
+                <div class="token-row">
+                    <select id="vision-tokens">
+                        <option value="">Aucun (par défaut du modèle)</option>
+                        <option value="2048">2K (Rapide)</option>
+                        <option value="4096">4K (Standard)</option>
+                        <option value="8192">8K (Détaillé)</option>
+                        <option value="16384">16K (Très détaillé)</option>
+                        <option value="32768">32K (Analyse complète)</option>
+                        <option value="__manual__">✏️ Personnalisé...</option>
+                    </select>
+                </div>
+                <input type="number" id="vision-tokens-manual" min="512" step="512" style="display: none; margin-top: 0.5rem;" placeholder="Saisir une valeur personnalisée">
+                <p class="token-info">Pour l'analyse d'images et vision par ordinateur. Optionnel si non supporté.</p>
+            </div>
+
+            <button class="btn btn-primary" id="btn-vision-save" onclick="saveVisionConfig()">💾 Sauvegarder Vision</button>
+        </div>
+
+        <hr class="divider">
+        <button class="btn btn-danger" id="btn-restart" onclick="restartContainer()">🔄 Restart nanobot-gateway</button>
+
+        <div id="toast" class="toast"></div>
+    </div>
+
+    <script>
+        // ========== Tab Management ==========
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            // Load data for specific tabs
+            if (tabName === 'coder') loadCoderConfig();
+            if (tabName === 'vision') loadVisionConfig();
+        }
+
+        // ========== Default Agent Tab ==========
+        let manualMode = false;
+        const modelSelect = document.getElementById('model-select');
+        const modelManual = document.getElementById('model-manual');
+
+        const currentModel = "{{ current_model }}";
+        const options = Array.from(modelSelect.options).map(o => o.value).filter(v => v !== '__manual__');
+        if (currentModel && !options.includes(currentModel)) {
+            switchToManual();
+        }
+
+        modelSelect.addEventListener('change', () => {
+            if (modelSelect.value === '__manual__') switchToManual();
+        });
+
+        function switchToManual() {
+            manualMode = true;
+            modelSelect.style.display = 'none';
+            modelManual.style.display = 'block';
+            document.getElementById('toggle-mode').textContent = 'Liste';
+            modelManual.focus();
+        }
+
+        function toggleManual() {
+            if (manualMode) {
+                manualMode = false;
+                modelSelect.style.display = 'block';
+                modelManual.style.display = 'none';
+                document.getElementById('toggle-mode').textContent = 'Manuel';
+            } else {
+                switchToManual();
+            }
+        }
+
+        function getModel() {
+            return manualMode ? modelManual.value.trim() : modelSelect.value;
+        }
+
+        // ========== Token Input Management ==========
+        function setupTokenInput(selectId, inputId) {
+            const select = document.getElementById(selectId);
+            const input = document.getElementById(inputId);
+
+            select.addEventListener('change', () => {
+                if (select.value === '__manual__') {
+                    select.style.display = 'none';
+                    input.style.display = 'block';
+                    input.focus();
+                } else {
+                    select.style.display = 'block';
+                    input.style.display = 'none';
+                }
+            });
+        }
+
+        setupTokenInput('coder-tokens', 'coder-tokens-manual');
+        setupTokenInput('vision-tokens', 'vision-tokens-manual');
+
+        function getTokenValue(selectId, inputId) {
+            const select = document.getElementById(selectId);
+            if (select.value === '__manual__') {
+                return document.getElementById(inputId).value;
+            }
+            return select.value || null;
+        }
+
+        // ========== Toast Notification ==========
+        function showToast(msg, type) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = `toast ${type}`;
+            t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 4000);
+        }
+
+        // ========== Default Config ==========
+        async function saveConfig() {
+            const btn = document.getElementById('btn-save');
+            const model = getModel();
+            const provider = document.getElementById('provider').value;
+            if (!model) return showToast('Veuillez saisir un modèle', 'error');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Sauvegarde...';
+            try {
+                const res = await fetch('/api/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model, provider })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    document.getElementById('cur-model').textContent = model;
+                    document.getElementById('cur-provider').textContent = provider;
+                } else {
+                    showToast('Erreur : ' + data.error, 'error');
+                }
+            } catch (e) {
+                showToast('Erreur réseau', 'error');
+            }
+            btn.disabled = false;
+            btn.innerHTML = '💾 Sauvegarder la configuration';
+        }
+
+        // ========== Coder Config ==========
+        async function loadCoderConfig() {
+            try {
+                const res = await fetch('/api/coder');
+                const data = await res.json();
+                document.getElementById('coder-provider').value = data.provider || 'custom';
+                document.getElementById('coder-model').value = data.model || '';
+                document.getElementById('coder-tokens').value = data.maxTokens || 16384;
+                document.getElementById('coder-cur-provider').textContent = data.provider || '—';
+                document.getElementById('coder-cur-model').textContent = data.model || '—';
+            } catch (e) {
+                showToast('Erreur lors du chargement Coder', 'error');
+            }
+        }
+
+        async function saveCoderConfig() {
+            const btn = document.getElementById('btn-coder-save');
+            const model = document.getElementById('coder-model').value.trim();
+            const provider = document.getElementById('coder-provider').value;
+            const maxTokens = getTokenValue('coder-tokens', 'coder-tokens-manual');
+
+            if (!model || !provider) return showToast('Modèle et provider requis', 'error');
+            if (!maxTokens) return showToast('Veuillez saisir maxTokens', 'error');
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Sauvegarde...';
+            try {
+                const res = await fetch('/api/coder/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model, provider, maxTokens: parseInt(maxTokens) })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    document.getElementById('coder-cur-provider').textContent = provider;
+                    document.getElementById('coder-cur-model').textContent = model;
+                } else {
+                    showToast('Erreur : ' + data.error, 'error');
+                }
+            } catch (e) {
+                showToast('Erreur réseau', 'error');
+            }
+            btn.disabled = false;
+            btn.innerHTML = '💾 Sauvegarder Coder';
+        }
+
+        // ========== Vision Config ==========
+        async function loadVisionConfig() {
+            try {
+                const res = await fetch('/api/vision');
+                const data = await res.json();
+                document.getElementById('vision-provider').value = data.provider || 'custom';
+                document.getElementById('vision-model').value = data.model || '';
+                if (data.maxTokens) {
+                    document.getElementById('vision-tokens').value = data.maxTokens;
+                } else {
+                    document.getElementById('vision-tokens').value = '';
+                }
+                document.getElementById('vision-cur-provider').textContent = data.provider || '—';
+                document.getElementById('vision-cur-model').textContent = data.model || '—';
+            } catch (e) {
+                showToast('Erreur lors du chargement Vision', 'error');
+            }
+        }
+
+        async function saveVisionConfig() {
+            const btn = document.getElementById('btn-vision-save');
+            const model = document.getElementById('vision-model').value.trim();
+            const provider = document.getElementById('vision-provider').value;
+            const maxTokens = getTokenValue('vision-tokens', 'vision-tokens-manual');
+
+            if (!model || !provider) return showToast('Modèle et provider requis', 'error');
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Sauvegarde...';
+            try {
+                const res = await fetch('/api/vision/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model,
+                        provider,
+                        maxTokens: maxTokens ? parseInt(maxTokens) : null
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    document.getElementById('vision-cur-provider').textContent = provider;
+                    document.getElementById('vision-cur-model').textContent = model;
+                } else {
+                    showToast('Erreur : ' + data.error, 'error');
+                }
+            } catch (e) {
+                showToast('Erreur réseau', 'error');
+            }
+            btn.disabled = false;
+            btn.innerHTML = '💾 Sauvegarder Vision';
+        }
+
+        // ========== Restart Container ==========
+        async function restartContainer() {
+            const btn = document.getElementById('btn-restart');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Restart en cours...';
+            try {
+                const res = await fetch('/api/restart', { method: 'POST' });
+                const data = await res.json();
+                showToast(data.success ? data.message : 'Erreur : ' + data.error, data.success ? 'success' : 'error');
+            } catch (e) {
+                showToast('Erreur réseau', 'error');
+            }
+            btn.disabled = false;
+            btn.innerHTML = '🔄 Restart nanobot-gateway';
+        }
+    </script>
+</body>
+
+</html>
