@@ -10,6 +10,7 @@ app = Flask(__name__)
 CONFIG_PATH = os.environ.get("CONFIG_PATH", "/root/.nanobot/config.json")
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://ollama:11434")
 DOCKER_PROXY_URL = os.environ.get("DOCKER_PROXY_URL", "http://socket-proxy-nbt-mngr:2375")
+HTTP_PORT = os.environ.get("HTTP_PORT", "8899")
 
 
 def read_config():
@@ -230,4 +231,4 @@ def api_restart():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8899, debug=False)
+    app.run(host="0.0.0.0", port=HTTP_PORT, debug=False)

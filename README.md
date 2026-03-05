@@ -363,11 +363,10 @@ Ce projet est fourni tel quel pour la gestion de Nanobot.
 ## 🗺️ Roadmap
 
 - [ ] Mode clair/sombre amélioré
-- [ ] Port configurable
+- [x] Port configurable
 - [ ] Export/import de configurations
-- [ ] Historique des modifications
-- [ ] Support multi-utilisateurs
-- [ ] Webhooks pour notifications
+- [ ] Historique des modification
+- [ ] Support multilingue
 
 ---
 
