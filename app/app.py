@@ -7,9 +7,9 @@ import os
 
 app = Flask(__name__)
 
-CONFIG_PATH = os.environ.get("CONFIG_PATH", "/nanobot-config/config.json")
+CONFIG_PATH = os.environ.get("CONFIG_PATH", "/root/.nanobot/config.json")
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://ollama:11434")
-DOCKER_PROXY_URL = os.environ.get("DOCKER_PROXY_URL", "http://docker-socket-proxy:2375")
+DOCKER_PROXY_URL = os.environ.get("DOCKER_PROXY_URL", "http://socket-proxy-nbt-mngr:2375")
 
 
 def read_config():

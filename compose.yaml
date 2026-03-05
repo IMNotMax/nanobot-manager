@@ -11,9 +11,9 @@ services:
     ports:
       - "8899:8899"
     volumes:
-      - /opt/stacks/nanobot/config:/nanobot-config
+      - ~/.nanobot:/root/.nanobot
     environment:
-      - CONFIG_PATH=/nanobot-config/config.json
+      - CONFIG_PATH=~/.nanobot/config.json
       - OLLAMA_URL=http://192.168.2.220:11434
       - DOCKER_PROXY_URL=http://socket-proxy-nbt-mngr:2375
     networks:
