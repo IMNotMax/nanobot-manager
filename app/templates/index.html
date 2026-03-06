@@ -251,6 +251,14 @@
             margin-top: 0.35rem;
             margin-left: 0.05rem;
         }
+
+        .token-info code {
+            background: #0f172a;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #38bdf8;
+        }
     </style>
 </head>
 
@@ -264,6 +272,7 @@
             <button class="tab-btn active" onclick="switchTab('defaults')">Par Défaut</button>
             <button class="tab-btn" onclick="switchTab('coder')">🔧 Coder</button>
             <button class="tab-btn" onclick="switchTab('vision')">👁️ Vision</button>
+            <button class="tab-btn" onclick="switchTab('settings')">⚙️ Paramètres</button>
         </div>
 
         <!-- Default Agent Tab -->
@@ -385,8 +394,30 @@
             <button class="btn btn-primary" id="btn-vision-save" onclick="saveVisionConfig()">💾 Sauvegarder Vision</button>
         </div>
 
+        <!-- Settings Tab -->
+        <div id="settings" class="tab-content">
+            <div class="current-badge">
+                Mode d'exécution : <span id="settings-execution-type">—</span>
+            </div>
+
+            <div class="field">
+                <label>Type d'exécution</label>
+                <select id="execution-type">
+                    <option value="docker">🐳 Docker (Container)</option>
+                    <option value="host">🖥️ Machine hôte (Systemctl)</option>
+                </select>
+            </div>
+
+            <p class="token-info">
+                <strong>Docker :</strong> Redémarre le container nanobot-gateway via l'API Docker.<br>
+                <strong>Machine hôte :</strong> Redémarre le service via <code>systemctl --user restart nanobot-gateway</code>
+            </p>
+
+            <button class="btn btn-primary" id="btn-settings-save" onclick="saveExecutionType()">💾 Sauvegarder les paramètres</button>
+        </div>
+
         <hr class="divider">
-        <button class="btn btn-danger" id="btn-restart" onclick="restartContainer()">🔄 Restart nanobot-gateway</button>
+        <button class="btn btn-danger" id="btn-restart" onclick="restartContainer()">🔄 Redémarrer Nanobot</button>
 
         <div id="toast" class="toast"></div>
     </div>
@@ -405,6 +436,7 @@
             // Load data for specific tabs
             if (tabName === 'coder') loadCoderConfig();
             if (tabName === 'vision') loadVisionConfig();
+            if (tabName === 'settings') loadExecutionType();
         }
 
         // ========== Default Agent Tab ==========
@@ -612,11 +644,49 @@
             btn.innerHTML = '💾 Sauvegarder Vision';
         }
 
+        // ========== Execution Type Settings ==========
+        async function loadExecutionType() {
+            try {
+                const res = await fetch('/api/execution-type');
+                const data = await res.json();
+                document.getElementById('execution-type').value = data.execution_type || 'docker';
+                document.getElementById('settings-execution-type').textContent = data.execution_type || 'docker';
+            } catch (e) {
+                showToast('Erreur lors du chargement des paramètres', 'error');
+            }
+        }
+
+        async function saveExecutionType() {
+            const btn = document.getElementById('btn-settings-save');
+            const execution_type = document.getElementById('execution-type').value;
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Sauvegarde...';
+            try {
+                const res = await fetch('/api/execution-type/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ execution_type })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    document.getElementById('settings-execution-type').textContent = execution_type;
+                } else {
+                    showToast('Erreur : ' + data.error, 'error');
+                }
+            } catch (e) {
+                showToast('Erreur réseau', 'error');
+            }
+            btn.disabled = false;
+            btn.innerHTML = '💾 Sauvegarder les paramètres';
+        }
+
         // ========== Restart Container ==========
         async function restartContainer() {
             const btn = document.getElementById('btn-restart');
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner"></span>Restart en cours...';
+            btn.innerHTML = '<span class="spinner"></span>Redémarrage en cours...';
             try {
                 const res = await fetch('/api/restart', { method: 'POST' });
                 const data = await res.json();
@@ -625,7 +695,7 @@
                 showToast('Erreur réseau', 'error');
             }
             btn.disabled = false;
-            btn.innerHTML = '🔄 Restart nanobot-gateway';
+            btn.innerHTML = '🔄 Redémarrer Nanobot';
         }
     </script>
 </body>

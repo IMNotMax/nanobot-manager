@@ -9,7 +9,9 @@ app = Flask(__name__)
 
 CONFIG_PATH = os.environ.get("CONFIG_PATH", "/root/.nanobot/config.json")
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://ollama:11434")
-DOCKER_PROXY_URL = os.environ.get("DOCKER_PROXY_URL", "http://socket-proxy-nbt-mngr:2375")
+DOCKER_PROXY_URL = os.environ.get(
+    "DOCKER_PROXY_URL", "http://socket-proxy-nbt-mngr:2375"
+)
 HTTP_PORT = os.environ.get("HTTP_PORT", "8899")
 
 
@@ -195,37 +197,108 @@ def api_vision_update():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@app.route("/api/execution-type")
+def api_execution_type():
+    """Retrieve execution type (docker or host)."""
+    try:
+        config = read_config()
+        execution_type = config.get("system", {}).get("execution_type", "docker")
+        return jsonify({"execution_type": execution_type})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/execution-type/update", methods=["POST"])
+def api_execution_type_update():
+    """Update execution type (docker or host)."""
+    data = request.json
+    execution_type = data.get("execution_type", "").strip().lower()
+
+    if execution_type not in ("docker", "host"):
+        return jsonify(
+            {"success": False, "error": "execution_type doit être 'docker' ou 'host'"}
+        ), 400
+
+    try:
+        config = read_config()
+        config.setdefault("system", {})
+        config["system"]["execution_type"] = execution_type
+        write_config(config)
+        return jsonify(
+            {
+                "success": True,
+                "message": f"✅ Mode d'exécution changé : {execution_type}",
+            }
+        )
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @app.route("/api/restart", methods=["POST"])
 def api_restart():
     try:
-        # 1. Obtenir l'ID du container nanobot-gateway
-        resp = requests.get(f"{DOCKER_PROXY_URL}/containers/json?all=1", timeout=5)
-        resp.raise_for_status()
-        containers = resp.json()
-        container_id = None
-        for c in containers:
-            if any("nanobot-gateway" in name for name in c.get("Names", [])):
-                container_id = c["Id"]
-                break
-        if not container_id:
-            return jsonify(
-                {"success": False, "error": "Container nanobot-gateway introuvable"}
-            ), 404
+        config = read_config()
+        execution_type = config.get("system", {}).get("execution_type", "docker")
 
-        # 2. Restart via l'API
-        r = requests.post(
-            f"{DOCKER_PROXY_URL}/containers/{container_id}/restart", timeout=30
-        )
-        if r.status_code in (204, 200):
-            return jsonify(
-                {
-                    "success": True,
-                    "message": "🔄 Container nanobot-gateway restarté avec succès",
-                }
+        if execution_type == "host":
+            # Restart using systemctl on host
+            try:
+                result = subprocess.run(
+                    ["systemctl", "--user", "restart", "nanobot-gateway"],
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
+                if result.returncode == 0:
+                    return jsonify(
+                        {
+                            "success": True,
+                            "message": "🔄 Service nanobot-gateway restarté avec succès",
+                        }
+                    )
+                else:
+                    return jsonify(
+                        {
+                            "success": False,
+                            "error": f"systemctl error: {result.stderr}",
+                        }
+                    ), 500
+            except subprocess.TimeoutExpired:
+                return jsonify(
+                    {"success": False, "error": "systemctl restart timeout"}
+                ), 500
+            except FileNotFoundError:
+                return jsonify({"success": False, "error": "systemctl not found"}), 500
+        else:
+            # Restart using Docker API
+            # 1. Obtenir l'ID du container nanobot-gateway
+            resp = requests.get(f"{DOCKER_PROXY_URL}/containers/json?all=1", timeout=5)
+            resp.raise_for_status()
+            containers = resp.json()
+            container_id = None
+            for c in containers:
+                if any("nanobot-gateway" in name for name in c.get("Names", [])):
+                    container_id = c["Id"]
+                    break
+            if not container_id:
+                return jsonify(
+                    {"success": False, "error": "Container nanobot-gateway introuvable"}
+                ), 404
+
+            # 2. Restart via l'API
+            r = requests.post(
+                f"{DOCKER_PROXY_URL}/containers/{container_id}/restart", timeout=30
             )
-        return jsonify(
-            {"success": False, "error": f"HTTP {r.status_code}: {r.text}"}
-        ), 500
+            if r.status_code in (204, 200):
+                return jsonify(
+                    {
+                        "success": True,
+                        "message": "🔄 Container nanobot-gateway restarté avec succès",
+                    }
+                )
+            return jsonify(
+                {"success": False, "error": f"HTTP {r.status_code}: {r.text}"}
+            ), 500
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
