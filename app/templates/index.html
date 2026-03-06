@@ -259,6 +259,96 @@
             font-family: 'Courier New', monospace;
             color: #38bdf8;
         }
+
+        .settings-section {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .settings-section h3 {
+            color: #38bdf8;
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .ssh-key-box {
+            background: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            padding: 0.75rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            color: #cbd5e1;
+            word-break: break-all;
+            max-height: 120px;
+            overflow-y: auto;
+            margin: 0.75rem 0;
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            width: auto;
+            display: inline-block;
+        }
+
+        .copy-btn {
+            background: #38bdf8;
+            color: #0f172a;
+            border: none;
+            margin-left: 0.5rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #0ea5e9;
+        }
+
+        .logs-container {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .logs-empty {
+            color: #64748b;
+            font-style: italic;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-success {
+            background: #064e3b;
+            color: #6ee7b7;
+        }
+
+        .status-error {
+            background: #450a0a;
+            color: #fca5a5;
+        }
     </style>
 </head>
 
@@ -396,24 +486,64 @@
 
         <!-- Settings Tab -->
         <div id="settings" class="tab-content">
-            <div class="current-badge">
-                Mode d'exécution : <span id="settings-execution-type">—</span>
+            <!-- Execution Type Section -->
+            <div class="settings-section">
+                <h3>🔄 Mode d'exécution</h3>
+                <div class="current-badge">
+                    Actuel : <span id="settings-execution-type">—</span>
+                </div>
+
+                <div class="field">
+                    <label>Type d'exécution</label>
+                    <select id="execution-type">
+                        <option value="docker">🐳 Docker (Container)</option>
+                        <option value="host">🖥️ Machine hôte (Systemctl)</option>
+                    </select>
+                </div>
+
+                <p class="token-info">
+                    <strong>Docker :</strong> Redémarre le container nanobot-gateway via l'API Docker.<br>
+                    <strong>Machine hôte :</strong> Redémarre le service via <code>systemctl --user restart nanobot-gateway</code>
+                </p>
+
+                <button class="btn btn-primary" id="btn-settings-save" onclick="saveExecutionType()">💾 Sauvegarder les paramètres</button>
             </div>
 
-            <div class="field">
-                <label>Type d'exécution</label>
-                <select id="execution-type">
-                    <option value="docker">🐳 Docker (Container)</option>
-                    <option value="host">🖥️ Machine hôte (Systemctl)</option>
-                </select>
+            <!-- SSH Key Section -->
+            <div class="settings-section">
+                <h3>🔑 Clé SSH (Mode Host)</h3>
+                <p class="token-info">Générez une clé SSH et copiez-la sur la machine hôte pour utiliser le mode Host.</p>
+
+                <div id="ssh-key-status">
+                    <p class="token-info">Chargement...</p>
+                </div>
+
+                <div id="ssh-key-display" style="display: none;">
+                    <div class="status-badge status-success">✅ Clé SSH générée</div>
+                    <p class="token-info" style="margin-top: 0.75rem;">Copiez cette clé publique et ajoutez-la à <code>~/.ssh/authorized_keys</code> sur la machine hôte :</p>
+                    <div class="ssh-key-box" id="ssh-public-key"></div>
+                    <button class="btn btn-small copy-btn" onclick="copySshKey()">📋 Copier</button>
+                    <button class="btn btn-primary btn-small" onclick="regenerateSshKey()" style="margin-left: 0.5rem;">🔄 Régénérer</button>
+                </div>
+
+                <div id="ssh-key-missing" style="display: none;">
+                    <div class="status-badge status-error">⚠️ Clé SSH manquante</div>
+                    <p class="token-info" style="margin-top: 0.75rem;">Aucune clé SSH n'existe. Cliquez sur le bouton ci-dessous pour en générer une :</p>
+                    <button class="btn btn-primary" id="btn-generate-ssh" onclick="generateSshKey()" style="margin-top: 0.75rem;">🔑 Générer une clé SSH</button>
+                </div>
             </div>
 
-            <p class="token-info">
-                <strong>Docker :</strong> Redémarre le container nanobot-gateway via l'API Docker.<br>
-                <strong>Machine hôte :</strong> Redémarre le service via <code>systemctl --user restart nanobot-gateway</code>
-            </p>
+            <!-- Logs Section -->
+            <div class="settings-section">
+                <h3>📜 Logs de nanobot-gateway</h3>
+                <p class="token-info">Affichage des 100 dernières lignes. Rafraîchissez la page pour obtenir les logs à jour.</p>
 
-            <button class="btn btn-primary" id="btn-settings-save" onclick="saveExecutionType()">💾 Sauvegarder les paramètres</button>
+                <button class="btn btn-primary btn-small" id="btn-refresh-logs" onclick="loadLogs()" style="margin-bottom: 0.75rem;">🔄 Rafraîchir les logs</button>
+
+                <div id="logs-container" class="logs-container">
+                    <div class="logs-empty">Chargement des logs...</div>
+                </div>
+            </div>
         </div>
 
         <hr class="divider">
@@ -436,7 +566,11 @@
             // Load data for specific tabs
             if (tabName === 'coder') loadCoderConfig();
             if (tabName === 'vision') loadVisionConfig();
-            if (tabName === 'settings') loadExecutionType();
+            if (tabName === 'settings') {
+                loadExecutionType();
+                loadSshKey();
+                loadLogs();
+            }
         }
 
         // ========== Default Agent Tab ==========
@@ -680,6 +814,97 @@
             }
             btn.disabled = false;
             btn.innerHTML = '💾 Sauvegarder les paramètres';
+        }
+
+        // ========== SSH Key Management ==========
+        async function loadSshKey() {
+            try {
+                const res = await fetch('/api/ssh-key');
+                const data = await res.json();
+
+                const display = document.getElementById('ssh-key-display');
+                const missing = document.getElementById('ssh-key-missing');
+                const status = document.getElementById('ssh-key-status');
+
+                if (data.exists && data.public_key) {
+                    display.style.display = 'block';
+                    missing.style.display = 'none';
+                    status.style.display = 'none';
+                    document.getElementById('ssh-public-key').textContent = data.public_key;
+                } else {
+                    display.style.display = 'none';
+                    missing.style.display = 'block';
+                    status.style.display = 'none';
+                }
+            } catch (e) {
+                console.error('Erreur SSH key:', e);
+                document.getElementById('ssh-key-status').innerHTML = '<div class="status-badge status-error">❌ Erreur</div>';
+            }
+        }
+
+        async function generateSshKey() {
+            const btn = document.getElementById('btn-generate-ssh');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Génération...';
+
+            try {
+                const res = await fetch('/api/ssh-key/generate', { method: 'POST' });
+                const data = await res.json();
+
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    await loadSshKey();
+                } else {
+                    showToast('Erreur : ' + data.error, 'error');
+                }
+            } catch (e) {
+                showToast('Erreur réseau', 'error');
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '🔑 Générer une clé SSH';
+        }
+
+        function copySshKey() {
+            const keyText = document.getElementById('ssh-public-key').textContent;
+            navigator.clipboard.writeText(keyText).then(() => {
+                showToast('✅ Clé SSH copiée dans le presse-papiers', 'success');
+            }).catch(() => {
+                showToast('❌ Impossible de copier', 'error');
+            });
+        }
+
+        async function regenerateSshKey() {
+            if (confirm('Êtes-vous sûr ? Cela régénérera une nouvelle clé SSH.')) {
+                await generateSshKey();
+            }
+        }
+
+        // ========== Logs Management ==========
+        async function loadLogs() {
+            const btn = document.getElementById('btn-refresh-logs');
+            const container = document.getElementById('logs-container');
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Chargement...';
+
+            try {
+                const res = await fetch('/api/logs');
+                const data = await res.json();
+
+                if (data.success && data.logs) {
+                    container.textContent = data.logs;
+                    container.classList.remove('logs-empty');
+                } else {
+                    const error = data.error || 'Impossible de charger les logs';
+                    container.innerHTML = `<div class="logs-empty">❌ ${error}</div>`;
+                }
+            } catch (e) {
+                container.innerHTML = '<div class="logs-empty">❌ Erreur réseau lors du chargement</div>';
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '🔄 Rafraîchir les logs';
         }
 
         // ========== Restart Container ==========

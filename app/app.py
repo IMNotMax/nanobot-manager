@@ -4,6 +4,7 @@ import json
 import subprocess
 import requests
 import os
+import pathlib
 
 app = Flask(__name__)
 
@@ -36,6 +37,48 @@ def get_ollama_models():
     except Exception as e:
         print(f"Ollama error: {e}")
     return []
+
+
+def get_ssh_public_key() -> Union[str, None]:
+    """Retrieve SSH public key if it exists."""
+    ssh_key_path = pathlib.Path("/root/.ssh/id_ed25519.pub")
+    if ssh_key_path.exists():
+        try:
+            return ssh_key_path.read_text().strip()
+        except Exception as e:
+            print(f"Error reading SSH key: {e}")
+    return None
+
+
+def generate_ssh_key() -> Tuple[bool, str]:
+    """Generate SSH key pair."""
+    try:
+        result = subprocess.run(
+            [
+                "ssh-keygen",
+                "-t",
+                "ed25519",
+                "-f",
+                "/root/.ssh/id_ed25519",
+                "-N",
+                "",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode == 0:
+            # Read and return the public key
+            public_key = get_ssh_public_key()
+            return (True, public_key or "")
+        else:
+            return (False, f"ssh-keygen error: {result.stderr}")
+    except subprocess.TimeoutExpired:
+        return (False, "ssh-keygen timeout")
+    except FileNotFoundError:
+        return (False, "ssh-keygen not found")
+    except Exception as e:
+        return (False, str(e))
 
 
 @app.route("/")
@@ -318,6 +361,171 @@ def api_restart():
             ), 500
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/ssh-key")
+def api_ssh_key():
+    """Retrieve SSH public key if it exists."""
+    try:
+        public_key = get_ssh_public_key()
+        return jsonify({"public_key": public_key, "exists": public_key is not None})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/ssh-key/generate", methods=["POST"])
+def api_ssh_key_generate():
+    """Generate SSH key pair."""
+    try:
+        success, message = generate_ssh_key()
+        if success:
+            return jsonify(
+                {
+                    "success": True,
+                    "message": "✅ Clé SSH générée avec succès",
+                    "public_key": message,
+                }
+            )
+        else:
+            return jsonify({"success": False, "error": message}), 500
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/logs")
+def api_logs():
+    """Retrieve nanobot-gateway logs based on execution type."""
+    try:
+        config = read_config()
+        execution_type = config.get("system", {}).get("execution_type", "docker")
+
+        if execution_type == "host":
+            # Get logs from host via SSH + journalctl
+            if not HOST_SSH_USER:
+                return jsonify(
+                    {
+                        "success": False,
+                        "error": "HOST_SSH_USER not configured",
+                        "logs": "",
+                    }
+                ), 500
+
+            try:
+                ssh_cmd = [
+                    "ssh",
+                    "-o",
+                    "StrictHostKeyChecking=no",
+                    "-o",
+                    "UserKnownHostsFile=/dev/null",
+                    "-p",
+                    str(HOST_SSH_PORT),
+                    f"{HOST_SSH_USER}@{HOST_SSH_HOST}",
+                    "journalctl --user -u nanobot-gateway -n 100 --no-pager",
+                ]
+                result = subprocess.run(
+                    ssh_cmd, capture_output=True, text=True, timeout=10
+                )
+                if result.returncode == 0:
+                    return jsonify(
+                        {"success": True, "logs": result.stdout, "source": "host"}
+                    )
+                else:
+                    return jsonify(
+                        {
+                            "success": False,
+                            "error": f"SSH error: {result.stderr}",
+                            "logs": "",
+                            "source": "host",
+                        }
+                    ), 500
+            except subprocess.TimeoutExpired:
+                return jsonify(
+                    {
+                        "success": False,
+                        "error": "SSH logs timeout",
+                        "logs": "",
+                        "source": "host",
+                    }
+                ), 500
+            except FileNotFoundError:
+                return jsonify(
+                    {
+                        "success": False,
+                        "error": "ssh not found",
+                        "logs": "",
+                        "source": "host",
+                    }
+                ), 500
+        else:
+            # Get logs from Docker container
+            try:
+                resp = requests.get(
+                    f"{DOCKER_PROXY_URL}/containers/json?all=1", timeout=5
+                )
+                resp.raise_for_status()
+                containers = resp.json()
+                container_id = None
+                for c in containers:
+                    if any("nanobot-gateway" in name for name in c.get("Names", [])):
+                        container_id = c["Id"]
+                        break
+
+                if not container_id:
+                    return jsonify(
+                        {
+                            "success": False,
+                            "error": "Container nanobot-gateway not found",
+                            "logs": "",
+                            "source": "docker",
+                        }
+                    ), 404
+
+                # Get container logs
+                log_resp = requests.get(
+                    f"{DOCKER_PROXY_URL}/containers/{container_id}/logs",
+                    params={"stdout": 1, "stderr": 1, "tail": 100},
+                    timeout=5,
+                )
+                if log_resp.ok:
+                    return jsonify(
+                        {
+                            "success": True,
+                            "logs": log_resp.text,
+                            "source": "docker",
+                        }
+                    )
+                else:
+                    return jsonify(
+                        {
+                            "success": False,
+                            "error": f"Docker error: {log_resp.status_code}",
+                            "logs": "",
+                            "source": "docker",
+                        }
+                    ), 500
+            except requests.exceptions.Timeout:
+                return jsonify(
+                    {
+                        "success": False,
+                        "error": "Docker logs timeout",
+                        "logs": "",
+                        "source": "docker",
+                    }
+                ), 500
+            except Exception as e:
+                return jsonify(
+                    {
+                        "success": False,
+                        "error": str(e),
+                        "logs": "",
+                        "source": "docker",
+                    }
+                ), 500
+
+    except Exception as e:
+        return jsonify(
+            {"success": False, "error": str(e), "logs": "", "source": "unknown"}
+        ), 500
 
 
 if __name__ == "__main__":
