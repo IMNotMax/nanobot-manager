@@ -1,57 +1,39 @@
 # Agent Guidelines for Nanobot Manager
 
-## Project Overview
-
-**Tech Stack**: Python 3.12 + Flask  
-**Package Manager**: pip  
-**Linter/Formatter**: Ruff  
-**Deployment**: Docker with socket-proxy pattern
-
----
+**Tech Stack**: Python 3.12 + Flask | **Package Manager**: pip | **Linter**: Ruff (optional)  
+**Features**: Multi-agent config, execution modes (Docker/Host via SSH), logs viewer, SSH key management
 
 ## Build & Development Commands
 
-### Setup
+### Setup & Docker
 ```bash
-# Install dependencies
-pip install -r nanobot-manager/requirements.txt
-
-# Build Docker image
-docker compose build
-
-# Run container
+pip install -r app/requirements.txt
+docker compose build --no-cache
 docker compose up -d
 docker compose logs -f nanobot-manager
 ```
 
-### Linting & Formatting
+### Linting & Formatting (Optional)
 ```bash
-# Format code with Ruff
-ruff format nanobot-manager/app/
-
-# Check for lint issues
-ruff check nanobot-manager/app/
+pip install ruff
+ruff format app/
+ruff check app/ --fix
 ```
 
 ### Testing
 ```bash
-# Install test dependencies (if not in requirements.txt)
-pip install pytest pytest-flask
+# Install dependencies
+pip install pytest pytest-flask pytest-cov
 
 # Run all tests
-pytest nanobot-manager/tests/ -v
+pytest app/tests/ -v
 
-# Run single test file
-pytest nanobot-manager/tests/test_app.py -v
+# Run single test function (important!)
+pytest app/tests/test_app.py::test_api_restart_docker -v
 
-# Run single test function
-pytest nanobot-manager/tests/test_app.py::test_api_models -v
-
-# Run with coverage
-pytest nanobot-manager/tests/ --cov=nanobot-manager/app --cov-report=term-missing
+# With coverage
+pytest app/tests/ -v --cov=app --cov-report=term-missing
 ```
-
----
 
 ## Code Style Guidelines
 
@@ -60,34 +42,27 @@ pytest nanobot-manager/tests/ --cov=nanobot-manager/app --cov-report=term-missin
 # Standard library
 import json
 import os
+import pathlib
 import subprocess
 from typing import Union, Tuple
 
 # Third-party
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response
 import requests
-
-# Local imports (if applicable)
-from config import read_config
 ```
 
-### Type Hints & Docstrings
-All functions must have type hints and docstrings:
+### Type Hints & Docstrings (Required)
 ```python
-def get_ollama_models(timeout: float = 5) -> list[str]:
-    """Fetch available models from Ollama API.
+def get_ssh_public_key() -> Union[str, None]:
+    """Retrieve SSH public key if it exists.
     
-    Args:
-        timeout: Request timeout in seconds
-        
     Returns:
-        List of model names, empty list if request fails
+        SSH public key string or None if not found
     """
-    try:
-        resp = requests.get(f"{OLLAMA_URL}/api/tags", timeout=timeout)
-        return [m["name"] for m in resp.json().get("models", [])]
-    except Exception:
-        return []
+    ssh_key_path = pathlib.Path("/root/.ssh/id_ed25519.pub")
+    if ssh_key_path.exists():
+        return ssh_key_path.read_text().strip()
+    return None
 ```
 
 ### Naming Conventions
@@ -95,89 +70,64 @@ def get_ollama_models(timeout: float = 5) -> list[str]:
 - **Classes**: `PascalCase` (e.g., `ConfigManager`)
 - **Constants**: `UPPER_SNAKE_CASE` (e.g., `CONFIG_PATH`, `OLLAMA_URL`)
 - **Variables**: `snake_case` (e.g., `max_tokens`, `container_id`)
-- **Private**: `_prefix_lowercase` (e.g., `_internal_helper`)
 
-### Error Handling
-Catch specific exceptions, provide informative messages:
+### Error Handling (Never crash the UI!)
+Catch specific exceptions and return JSON errors:
 ```python
 @app.route("/api/update", methods=["POST"])
 def api_update():
     try:
         data = request.json
         model = data.get("model", "").strip()
-        provider = data.get("provider", "").strip()
-        
-        # Validate input
-        if not model or not provider:
-            return jsonify({"success": False, "error": "Model and provider required"}), 400
-        
-        # Business logic
-        config = read_config()
-        config["agents"]["defaults"] = {"model": model, "provider": provider}
-        write_config(config)
-        
-        return jsonify({"success": True, "message": f"Updated: {provider}/{model}"})
+        if not model:
+            return jsonify({"success": False, "error": "Model required"}), 400
+        # Business logic...
+        return jsonify({"success": True, "message": f"✅ Config updated: {model}"})
     except FileNotFoundError:
         return jsonify({"success": False, "error": "Config file not found"}), 500
-    except json.JSONDecodeError as e:
-        return jsonify({"success": False, "error": f"Invalid JSON: {e}"}), 500
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 ```
 
-### API Response Format
-Consistent response structure:
+### API Response Format & Emojis
 ```python
-# Success (HTTP 200)
-{"success": true, "message": "✅ Config updated", "data": {...}}
-
-# Error (HTTP 4xx or 5xx)
-{"success": false, "error": "Descriptive error message"}
+# Success: {"success": True, "message": "✅ Updated"}
+# Error: {"success": False, "error": "Descriptive message"}
+# Use f-strings: f"🔄 Mode changed: {type}"
 ```
 
-### String Formatting
-Use f-strings for clarity:
-```python
-message = f"Config: {provider} / {model} ({max_tokens} tokens)"
-```
-
----
-
-## Project Structure
+## Project Structure & Key Details
 
 ```
-nanobot-manager/
-├── app.py              # Flask app, API routes
-├── requirements.txt    # Dependencies: flask>=3.0, requests>=2.31
-├── Dockerfile         # Python 3.12 container
-├── templates/
-│   └── index.html    # Web UI
-└── tests/
-    ├── __init__.py
-    └── test_app.py   # Unit tests
+nanobot-manager/app/
+├── app.py              # Flask app with all API endpoints
+├── requirements.txt    # flask>=3.0, requests>=2.31
+├── templates/index.html
+└── tests/test_app.py
 ```
 
-## Environment Variables
-```bash
-CONFIG_PATH=/opt/stacks/nanobot/config/config.json
-OLLAMA_URL=http://ollama:11434
-DOCKER_PROXY_URL=http://docker-socket-proxy:2375
-HTTP_PORT=8899
-```
+### Execution Modes (Docker vs Host)
+- **Docker**: Uses Docker Socket Proxy API (`/api/restart`)
+- **Host**: Uses SSH + `systemctl --user restart nanobot-gateway`
+- Config: `system.execution_type` field
 
----
+### Important API Endpoints
+- `GET/POST /api/execution-type` - Get/set execution mode
+- `POST /api/restart` - Restart (adapts to mode)
+- `GET/POST /api/ssh-key` - SSH key management
+- `GET /api/logs` - Fetch logs (Docker API or SSH+journalctl)
 
-## Security Best Practices
-- Validate all external API responses before use
-- Sanitize container names before Docker API calls
+### Subprocess & SSH Best Practices
+- Always use list format: `subprocess.run(["ssh", "-p", str(port), ...], ...)`
+- Set `capture_output=True, text=True, timeout=30`
+- Catch `subprocess.TimeoutExpired` explicitly
+- Use `pathlib.Path()` for file operations
+- SSH keys: ed25519 format, stored in `/root/.ssh/id_ed25519.pub`
+
+## Security & Testing
+- Validate all external API responses
+- Use specific exception types (never bare `except`)
+- Test both success & error paths
+- Mock Ollama, Docker, SSH in tests
+- Place tests in `app/tests/`
 - Never commit `.env` or credentials
-- Use specific exception types (avoid bare `except`)
-- Validate input data types before processing
-
----
-
-## Testing Standards
-- Place tests in `nanobot-manager/tests/`
-- Mock external services (Ollama, Docker)
-- Aim for >80% coverage on API endpoints
-- Use descriptive test names: `test_api_update_success`, `test_api_update_missing_fields`
