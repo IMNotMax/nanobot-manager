@@ -13,6 +13,9 @@ DOCKER_PROXY_URL = os.environ.get(
     "DOCKER_PROXY_URL", "http://socket-proxy-nbt-mngr:2375"
 )
 HTTP_PORT = os.environ.get("HTTP_PORT", "8899")
+HOST_SSH_USER = os.environ.get("HOST_SSH_USER", "")
+HOST_SSH_HOST = os.environ.get("HOST_SSH_HOST", "localhost")
+HOST_SSH_PORT = os.environ.get("HOST_SSH_PORT", "22")
 
 
 def read_config():
@@ -241,13 +244,29 @@ def api_restart():
         execution_type = config.get("system", {}).get("execution_type", "docker")
 
         if execution_type == "host":
-            # Restart using systemctl on host
+            # Restart using SSH + systemctl on host
+            if not HOST_SSH_USER:
+                return jsonify(
+                    {
+                        "success": False,
+                        "error": "HOST_SSH_USER not configured. Set HOST_SSH_USER env var.",
+                    }
+                ), 500
+
             try:
+                ssh_cmd = [
+                    "ssh",
+                    "-o",
+                    "StrictHostKeyChecking=no",
+                    "-o",
+                    "UserKnownHostsFile=/dev/null",
+                    "-p",
+                    str(HOST_SSH_PORT),
+                    f"{HOST_SSH_USER}@{HOST_SSH_HOST}",
+                    "systemctl --user restart nanobot-gateway",
+                ]
                 result = subprocess.run(
-                    ["systemctl", "--user", "restart", "nanobot-gateway"],
-                    capture_output=True,
-                    text=True,
-                    timeout=30,
+                    ssh_cmd, capture_output=True, text=True, timeout=30
                 )
                 if result.returncode == 0:
                     return jsonify(
@@ -260,15 +279,13 @@ def api_restart():
                     return jsonify(
                         {
                             "success": False,
-                            "error": f"systemctl error: {result.stderr}",
+                            "error": f"SSH error: {result.stderr}",
                         }
                     ), 500
             except subprocess.TimeoutExpired:
-                return jsonify(
-                    {"success": False, "error": "systemctl restart timeout"}
-                ), 500
+                return jsonify({"success": False, "error": "SSH restart timeout"}), 500
             except FileNotFoundError:
-                return jsonify({"success": False, "error": "systemctl not found"}), 500
+                return jsonify({"success": False, "error": "ssh not found"}), 500
         else:
             # Restart using Docker API
             # 1. Obtenir l'ID du container nanobot-gateway

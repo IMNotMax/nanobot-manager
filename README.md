@@ -32,10 +32,13 @@ Nanobot Manager permet de configurer **trois types d'agents** de manière indép
   - Support des valeurs personnalisées
 - Vision: maxTokens est optionnel (conforme à la spec Nanobot)
 
-### Autre Fonctionnalités
+### Autres Fonctionnalités
 
 - 📡 Lecture des modèles disponibles sur Ollama en temps réel
-- 🔄 Redémarrage du container `nanobot-gateway` directement depuis l'interface
+- 🔄 Redémarrage de nanobot-gateway directement depuis l'interface
+  - **Mode Docker**: Via l'API Docker Socket Proxy
+  - **Mode Host**: Via SSH + systemctl sur la machine hôte
+- ⚙️ Configuration flexible du mode d'exécution (Docker ou Host)
 - 💾 Sauvegarde automatique dans `config.json`
 - 🎨 Interface dark mode responsive et moderne
 - ✅ Validation complète côté serveur
@@ -83,9 +86,48 @@ CONFIG_PATH=/opt/stacks/nanobot/config/config.json
 # URL de l'instance Ollama
 OLLAMA_URL=http://ollama:11434
 
-# URL du proxy Docker Socket
+# URL du proxy Docker Socket (mode Docker)
 DOCKER_PROXY_URL=http://docker-socket-proxy:2375
+
+# Variables pour mode Host (exécution via systemctl sur l'hôte)
+HOST_SSH_USER=your_username          # Utilisateur sur l'hôte
+HOST_SSH_HOST=localhost              # Adresse de l'hôte
+HOST_SSH_PORT=22                     # Port SSH (défaut: 22)
 ```
+
+### Configuration du Mode Host (SSH)
+
+Si vous voulez utiliser Nanobot Manager pour redémarrer nanobot-gateway via `systemctl` sur la machine hôte:
+
+1. **Générer une clé SSH dans le container**
+   ```bash
+   docker exec nanobot-manager ssh-keygen -t ed25519 -f /root/.ssh/id_ed25519 -N ""
+   docker exec nanobot-manager cat /root/.ssh/id_ed25519.pub
+   ```
+
+2. **Ajouter la clé publique sur l'hôte**
+   ```bash
+   # Sur la machine hôte, ajouter la clé au authorized_keys
+   echo "ssh-ed25519 AAAA..." >> ~/.ssh/authorized_keys
+   chmod 600 ~/.ssh/authorized_keys
+   ```
+
+3. **Configurer les variables d'environnement dans compose.yaml**
+   ```yaml
+   environment:
+     - HOST_SSH_USER=your_username
+     - HOST_SSH_HOST=localhost
+     - HOST_SSH_PORT=22
+   ```
+
+4. **Ajouter les volumes SSH dans compose.yaml**
+   ```yaml
+   volumes:
+     - ~/.nanobot:/root/.nanobot
+     - ~/.ssh/nanobot-manager:/root/.ssh:ro
+   ```
+
+5. **Sélectionner le mode "Machine hôte" dans l'onglet ⚙️ Paramètres**
 
 ## 📋 Configuration Complète
 
@@ -226,7 +268,9 @@ Après configuration via Nanobot Manager, votre `config.json` ressemblera à:
 ### Système
 
 - `GET /` - Interface web
-- `POST /api/restart` - Redémarrer le container `nanobot-gateway`
+- `GET /api/execution-type` - Récupérer le mode d'exécution (docker ou host)
+- `POST /api/execution-type/update` - Configurer le mode d'exécution
+- `POST /api/restart` - Redémarrer nanobot-gateway (mode adapté: Docker ou systemctl/SSH)
 
 ## 🧪 Tester Localement
 
@@ -278,8 +322,8 @@ docker compose down
 ### Configuration ne s'applique pas
 
 1. Vérifier la sauvegarde dans l'onglet approprié
-2. Cliquer sur "🔄 Restart nanobot-gateway"
-3. Attendre le redémarrage du container
+2. Cliquer sur "🔄 Redémarrer Nanobot"
+3. Attendre le redémarrage
 4. Vérifier les logs: `docker compose logs nanobot-manager`
 
 ### Les modèles Ollama n'apparaissent pas
@@ -288,11 +332,22 @@ docker compose down
 - Vérifier l'URL Ollama: `curl $OLLAMA_URL/api/tags`
 - Les modèles doivent être téléchargés: `ollama pull llama2`
 
+### Mode Host: Erreur "SSH error" ou "Host not reachable"
+
+- Vérifier que la clé SSH est générée: `docker exec nanobot-manager ls -la /root/.ssh/`
+- Vérifier que la clé publique est dans `~/.ssh/authorized_keys` sur l'hôte
+- Tester la connexion SSH depuis le container:
+  ```bash
+  docker exec nanobot-manager ssh -o StrictHostKeyChecking=no user@localhost "systemctl --user status nanobot-gateway"
+  ```
+- Vérifier les permissions: `chmod 600 ~/.ssh/authorized_keys`
+
 ### Erreurs de permission
 
 - Vérifier l'accès au fichier config.json
-- Vérifier les permissions Docker: `docker ps`
-- Vérifier le socket proxy: `curl $DOCKER_PROXY_URL/version`
+- Vérifier les permissions Docker: `docker ps` (mode Docker)
+- Vérifier le socket proxy: `curl $DOCKER_PROXY_URL/version` (mode Docker)
+- Vérifier les logs SSH: `docker exec nanobot-manager ssh -v ...` (mode Host)
 
 ### Port 8899 déjà en utilisation
 
@@ -307,23 +362,28 @@ lsof -i :8899
 
 ## 🔄 Workflow Typique
 
-1. **Accéder** à <http://localhost:8899>
-2. **Configurer** l'agent Par Défaut
+1. **Configuration initiale**
+   - Aller à l'onglet "⚙️ Paramètres"
+   - Sélectionner le mode d'exécution (Docker ou Machine hôte)
+   - Sauvegarder les paramètres
+   
+2. **Accéder** à <http://localhost:8899>
+3. **Configurer** l'agent Par Défaut
    - Sélectionner le provider (openai, custom, etc.)
    - Choisir le modèle
    - Sauvegarder
-3. **Configurer** l'agent Coder
+4. **Configurer** l'agent Coder
    - Aller à l'onglet "🔧 Coder"
    - Saisir modèle/provider/tokens
    - Sauvegarder
-4. **Configurer** l'agent Vision
+5. **Configurer** l'agent Vision
    - Aller à l'onglet "👁️ Vision"
    - Saisir modèle/provider/tokens (optionnel)
    - Sauvegarder
-5. **Redémarrer** Nanobot
-   - Cliquer "🔄 Restart nanobot-gateway"
-   - Attendre le redémarrage
-6. **Vérifier** la configuration
+6. **Redémarrer** Nanobot
+   - Cliquer "🔄 Redémarrer Nanobot"
+   - Attendre le redémarrage (le mode utilisé dépend de la configuration ⚙️)
+7. **Vérifier** la configuration
    - Les badges affichent la configuration actuelle
    - Les changements sont persistés dans config.json
 

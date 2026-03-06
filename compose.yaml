@@ -12,10 +12,14 @@ services:
       - "8899:8899"
     volumes:
       - ~/.nanobot:/root/.nanobot
+      - ~/.ssh/nanobot-manager:/root/.ssh:ro
     environment:
       - CONFIG_PATH=/root/.nanobot/config.json
       - OLLAMA_URL=http://192.168.2.220:11434
       - DOCKER_PROXY_URL=http://socket-proxy-nbt-mngr:2375
+      - HOST_SSH_USER=your_host_user
+      - HOST_SSH_HOST=localhost
+      - HOST_SSH_PORT=22
     # networks:
     #   - socket-proxy-nbt-mngr-network
     restart: unless-stopped
