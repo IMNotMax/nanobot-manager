@@ -14,8 +14,6 @@ Nanobot Manager permet de configurer **trois types d'agents** de manière indép
 
 <p align="center">
   <img src="img/Default.png" />
-  <img src="img/Coder.png" />
-  <img src="img/Vision.png" />
 </p>
 
 ### Paramètres Configurables
@@ -100,12 +98,14 @@ HOST_SSH_PORT=22                     # Port SSH (défaut: 22)
 Si vous voulez utiliser Nanobot Manager pour redémarrer nanobot-gateway via `systemctl` sur la machine hôte:
 
 1. **Générer une clé SSH dans le container**
+
    ```bash
    docker exec nanobot-manager ssh-keygen -t ed25519 -f /root/.ssh/id_ed25519 -N ""
    docker exec nanobot-manager cat /root/.ssh/id_ed25519.pub
    ```
 
 2. **Ajouter la clé publique sur l'hôte**
+
    ```bash
    # Sur la machine hôte, ajouter la clé au authorized_keys
    echo "ssh-ed25519 AAAA..." >> ~/.ssh/authorized_keys
@@ -113,6 +113,7 @@ Si vous voulez utiliser Nanobot Manager pour redémarrer nanobot-gateway via `sy
    ```
 
 3. **Configurer les variables d'environnement dans compose.yaml**
+
    ```yaml
    environment:
      - HOST_SSH_USER=your_username
@@ -121,6 +122,7 @@ Si vous voulez utiliser Nanobot Manager pour redémarrer nanobot-gateway via `sy
    ```
 
 4. **Ajouter les volumes SSH dans compose.yaml**
+
    ```yaml
    volumes:
      - ~/.nanobot:/root/.nanobot
@@ -337,9 +339,11 @@ docker compose down
 - Vérifier que la clé SSH est générée: `docker exec nanobot-manager ls -la /root/.ssh/`
 - Vérifier que la clé publique est dans `~/.ssh/authorized_keys` sur l'hôte
 - Tester la connexion SSH depuis le container:
+
   ```bash
   docker exec nanobot-manager ssh -o StrictHostKeyChecking=no user@localhost "systemctl --user status nanobot-gateway"
   ```
+
 - Vérifier les permissions: `chmod 600 ~/.ssh/authorized_keys`
 
 ### Erreurs de permission
@@ -366,7 +370,7 @@ lsof -i :8899
    - Aller à l'onglet "⚙️ Paramètres"
    - Sélectionner le mode d'exécution (Docker ou Machine hôte)
    - Sauvegarder les paramètres
-   
+
 2. **Accéder** à <http://localhost:8899>
 3. **Configurer** l'agent Par Défaut
    - Sélectionner le provider (openai, custom, etc.)
