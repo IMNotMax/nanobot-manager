@@ -248,7 +248,7 @@ def api_execution_type():
     """Retrieve execution type (docker or host)."""
     try:
         config = read_config()
-        execution_type = config.get("system", {}).get("execution_type", "docker")
+        execution_type = config.get("nanobot-manager", {}).get("execution_type", "docker")
         return jsonify({"execution_type": execution_type})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -267,8 +267,8 @@ def api_execution_type_update():
 
     try:
         config = read_config()
-        config.setdefault("system", {})
-        config["system"]["execution_type"] = execution_type
+        config.setdefault("nanobot-manager", {})
+        config["nanobot-manager"]["execution_type"] = execution_type
         write_config(config)
         return jsonify(
             {
@@ -284,7 +284,7 @@ def api_execution_type_update():
 def api_restart():
     try:
         config = read_config()
-        execution_type = config.get("system", {}).get("execution_type", "docker")
+        execution_type = config.get("nanobot-manager", {}).get("execution_type", "docker")
 
         if execution_type == "host":
             # Restart using SSH + systemctl on host
@@ -397,7 +397,7 @@ def api_logs():
     """Retrieve nanobot-gateway logs based on execution type."""
     try:
         config = read_config()
-        execution_type = config.get("system", {}).get("execution_type", "docker")
+        execution_type = config.get("nanobot-manager", {}).get("execution_type", "docker")
 
         if execution_type == "host":
             # Get logs from host via SSH + journalctl
