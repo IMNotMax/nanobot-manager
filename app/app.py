@@ -13,10 +13,10 @@ OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://ollama:11434")
 DOCKER_PROXY_URL = os.environ.get(
     "DOCKER_PROXY_URL", "http://socket-proxy-nbt-mngr:2375"
 )
-HTTP_PORT = os.environ.get("HTTP_PORT", "8899")
+HTTP_PORT = int(os.environ.get("HTTP_PORT", "8899"))
 HOST_SSH_USER = os.environ.get("HOST_SSH_USER", "")
 HOST_SSH_HOST = os.environ.get("HOST_SSH_HOST", "localhost")
-HOST_SSH_PORT = os.environ.get("HOST_SSH_PORT", "22")
+HOST_SSH_PORT = int(os.environ.get("HOST_SSH_PORT", "22"))
 
 
 def read_config():
