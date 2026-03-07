@@ -1,8 +1,13 @@
-# Nanobot Manager - Fonctionnalités
+# Nanobot Manager - Fonctionnalités Complètes
 
 ## 📋 Vue d'ensemble
 
-Nanobot Manager est une interface web pour configurer les paramètres des agents IA de Nanobot. Il permet de configurer les modèles, providers et contextes pour différents cas d'usage.
+Nanobot Manager est une interface web complète pour gérer les agents IA de Nanobot. Il permet de :
+- Configurer les modèles, providers et contextes
+- Gérer l'exécution (Docker container ou service Host)
+- Générer et gérer des clés SSH
+- Consulter les logs en temps réel
+- Persister la configuration via fichier `.env`
 
 ## ✨ Fonctionnalités principales
 
@@ -60,13 +65,27 @@ Optimise la configuration pour l'analyse d'images et la vision par ordinateur.
 
 ---
 
+### 4. Paramètres & Exécution ⚙️ (NOUVEAU)
+
+Onglet centralisé pour gérer l'exécution de nanobot-gateway.
+
+**Sections:**
+- **🔄 Mode d'exécution** : Sélectionner Docker ou Machine hôte
+- **🔑 Clé SSH** : Générer/copier clés SSH pour mode Host
+- **📜 Logs** : Afficher les 100 dernières lignes (Docker ou SSH)
+
+**Utilité**: Configuration centralisée de tous les paramètres système.
+
+---
+
 ## 🎨 Interface utilisateur
 
 ### Navigation par onglets
-L'interface est organisée en 3 onglets pour faciliter la navigation:
+L'interface est organisée en **4 onglets** pour faciliter la navigation:
 - **Par Défaut** - Configuration globale
 - **🔧 Coder** - Configuration pour la génération de code
 - **👁️ Vision** - Configuration pour l'analyse d'images
+- **⚙️ Paramètres** - Gestion du système, SSH, logs
 
 ### Indicateur de configuration actuelle
 Chaque onglet affiche un badge avec la configuration actuelle:
@@ -90,31 +109,51 @@ Chaque onglet a un bouton "💾 Sauvegarder" qui:
 3. Affiche un message de confirmation
 4. Met à jour le badge de configuration actuelle
 
-### Redémarrer le container
-- Bouton "🔄 Restart nanobot-gateway"
-- Redémarre le container Docker `nanobot-gateway`
-- Nécessaire après une modification de configuration
-- Affiche l'état du redémarrage
+### Redémarrer nanobot-gateway
+- Bouton "🔄 Redémarrer Nanobot" (en bas)
+- **Mode Docker** : Redémarre le container via Docker API
+- **Mode Host** : Redémarre le service via SSH + systemctl
+- Adapte automatiquement selon la configuration
+- Affiche le statut du redémarrage
+
+### Générer une clé SSH
+- Bouton "🔑 Générer une clé SSH" dans l'onglet **⚙️ Paramètres**
+- Génère une paire de clés ed25519
+- Affiche la clé publique pour la copier
+- Bouton "📋 Copier" intégré
+- Persiste dans `~/.ssh/nanobot-manager/`
+
+### Consulter les logs
+- Bouton "🔄 Rafraîchir les logs" dans l'onglet **⚙️ Paramètres**
+- Affiche les **100 dernières lignes** de nanobot-gateway
+- **Mode Docker** : Récupère les logs du container
+- **Mode Host** : Récupère les logs via `journalctl --user`
+- Affichage scrollable avec police monospace
 
 ---
 
 ## 📡 API Endpoints
 
-### Configuration par Défaut
-- `POST /api/update` - Mettre à jour le modèle/provider par défaut
-- `GET /api/config` - Récupérer la configuration actuelle
-- `GET /api/models` - Récupérer la liste des modèles Ollama
+### Configuration des Agents
+- `GET /api/config` - Récupérer configuration par défaut
+- `GET /api/models` - Récupérer les modèles Ollama
+- `POST /api/update` - Mettre à jour modèle/provider par défaut
+- `GET /api/coder` - Récupérer configuration Coder
+- `POST /api/coder/update` - Mettre à jour configuration Coder
+- `GET /api/vision` - Récupérer configuration Vision
+- `POST /api/vision/update` - Mettre à jour configuration Vision
 
-### Configuration Coder
-- `GET /api/coder` - Récupérer la configuration Coder
-- `POST /api/coder/update` - Mettre à jour la configuration Coder
-
-### Configuration Vision
-- `GET /api/vision` - Récupérer la configuration Vision
-- `POST /api/vision/update` - Mettre à jour la configuration Vision
-
-### Container
+### Paramètres & Exécution
+- `GET /api/execution-type` - Récupérer le mode (docker ou host)
+- `POST /api/execution-type/update` - Changer le mode d'exécution
 - `POST /api/restart` - Redémarrer nanobot-gateway
+
+### SSH & Gestion des Clés
+- `GET /api/ssh-key` - Récupérer la clé SSH publique
+- `POST /api/ssh-key/generate` - Générer une nouvelle paire de clés SSH
+
+### Logs & Diagnostic
+- `GET /api/logs` - Récupérer les logs de nanobot-gateway
 
 ---
 
@@ -177,13 +216,34 @@ Vision:   gpt-4-vision (openai, 16K tokens) - Meilleur pour les images
 
 ---
 
+## 🔧 Configuration via `.env` (NOUVEAU)
+
+Le fichier `.env` permet une persistance des paramètres lors des mises à jour:
+
+```bash
+# Copier le template
+cp .env.example .env
+
+# Éditer avec vos valeurs
+CONFIG_PATH=/opt/stacks/nanobot/config/config.json
+OLLAMA_URL=http://ollama:11434
+DOCKER_PROXY_URL=http://socket-proxy-nbt-mngr:2375
+HOST_SSH_USER=your_username
+HOST_SSH_HOST=localhost
+HOST_SSH_PORT=22
+```
+
+**Avantage** : Les variables persistent après `git pull` et mises à jour.
+
+---
+
 ## 🐛 Dépannage
 
 ### Configuration ne s'applique pas
 1. Sauvegarder la configuration dans l'onglet approprié
-2. Cliquer sur "🔄 Restart nanobot-gateway"
-3. Attendre que le container soit redémarré
-4. Vérifier les logs: `docker logs nanobot-gateway`
+2. Cliquer sur "🔄 Redémarrer Nanobot"
+3. Attendre le redémarrage (Docker ou SSH selon mode)
+4. Vérifier les logs dans l'onglet **⚙️ Paramètres** → **📜 Logs**
 
 ### Erreurs lors de la sauvegarde
 - Vérifier que le provider et le modèle sont non vides
@@ -192,17 +252,29 @@ Vision:   gpt-4-vision (openai, 16K tokens) - Meilleur pour les images
 
 ### Les modèles Ollama n'apparaissent pas
 - Vérifier que Ollama est en cours d'exécution
-- Vérifier l'URL Ollama dans les variables d'environnement
-- Les modèles doivent être préalablement téléchargés avec `ollama pull`
+- Vérifier l'URL Ollama dans `.env` : `curl $OLLAMA_URL/api/tags`
+- Les modèles doivent être préalablement téléchargés : `ollama pull llama2`
+
+### Mode Host : Erreur SSH
+- Vérifier la clé SSH est générée (voir logs)
+- Vérifier la clé publique dans `~/.ssh/authorized_keys` sur l'hôte
+- Vérifier permissions SSH : `chmod 600 ~/.ssh/authorized_keys`
+- Tester SSH manuellement : `ssh -v user@host "systemctl --user status nanobot-gateway"`
+
+### Volume SSH Read-only
+- Vérifier que `compose.yaml` n'a **PAS** `:ro` sur le volume SSH
+- Doit être : `~/.ssh/nanobot-manager:/root/.ssh` (sans :ro)
+- Sinon impossible de générer les clés
 
 ---
 
 ## 📚 Références
 
 - [Documentation officielle Nanobot](https://github.com/HKUDS/nanobot)
-- Configuration complète: https://github.com/HKUDS/nanobot#configuration
-- Providers disponibles: https://github.com/HKUDS/nanobot#providers
+- [EXECUTION_MODES.md](EXECUTION_MODES.md) - Guide détaillé Docker vs Host
+- [AGENTS.md](AGENTS.md) - Conventions de code
 
 ---
 
-**Dernière mise à jour**: 2026-03-04
+**Dernière mise à jour**: 2026-03-06  
+**Version**: 0.3 (Paramètres, SSH, Logs, Docker/Host)
