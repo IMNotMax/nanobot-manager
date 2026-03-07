@@ -13,7 +13,7 @@ Nanobot Manager permet de configurer **trois types d'agents** de manière indép
 - **👁️ Vision** - Optimisé pour l'analyse d'images et la vision par ordinateur
 
 <p align="center">
-  <img src="img/Default.png" />
+  <img src="img/Default.png" width="50%" />
 </p>
 
 ### Paramètres Configurables
@@ -61,7 +61,7 @@ Nanobot Manager permet de configurer **trois types d'agents** de manière indép
 cp .env.example .env
 ```
 
-2. **Éditer `.env` avec vos paramètres**
+1. **Éditer `.env` avec vos paramètres**
 
 ```bash
 # .env
@@ -73,14 +73,14 @@ HOST_SSH_PORT=22
 HTTP_PORT=8899
 ```
 
-3. **Construire et lancer**
+1. **Construire et lancer**
 
 ```bash
 docker compose build --no-cache
 docker compose up -d
 ```
 
-4. **Accéder à l'interface**
+1. **Accéder à l'interface**
 
 ```
 http://localhost:8899
@@ -91,9 +91,6 @@ http://localhost:8899
 Le fichier `.env` permet une persistance des paramètres lors des mises à jour. Copiez `.env.example` en `.env` et personnalisez :
 
 ```bash
-# Chemin du fichier config.json de Nanobot
-CONFIG_PATH=/opt/stacks/nanobot/config/config.json
-
 # URL de l'instance Ollama
 OLLAMA_URL=http://ollama:11434
 
@@ -108,8 +105,6 @@ HOST_SSH_PORT=22                     # Port SSH
 # Port Flask
 HTTP_PORT=8899
 ```
-
-> **Astuce** : Ne commitez pas `.env` (il est dans `.gitignore`). Utilisez toujours `.env.example` comme référence.
 
 ## 📋 Configuration Complète
 
