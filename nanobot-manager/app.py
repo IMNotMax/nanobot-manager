@@ -189,6 +189,12 @@ def get_ssh_public_key() -> Union[str, None]:
     return None
 
 
+def get_ssh_key_path() -> str:
+    """Get the SSH private key path."""
+    ssh_dir = pathlib.Path(os.environ.get("HOME", "/home/app"), ".ssh")
+    return str(ssh_dir / "id_ed25519")
+
+
 def generate_ssh_key() -> Tuple[bool, str]:
     """Generate SSH key pair using the SSH directory from HOME or default."""
     ssh_dir = pathlib.Path(os.environ.get("HOME", "/home/app"), ".ssh")
@@ -725,12 +731,15 @@ def api_restart():
                 ), 500
 
             try:
+                ssh_key = get_ssh_key_path()
                 ssh_cmd = [
                     "ssh",
                     "-o",
                     "StrictHostKeyChecking=no",
                     "-o",
                     "UserKnownHostsFile=/dev/null",
+                    "-i",
+                    ssh_key,
                     "-p",
                     str(HOST_SSH_PORT),
                     f"{HOST_SSH_USER}@{HOST_SSH_HOST}",
@@ -839,12 +848,15 @@ def api_logs():
                 ), 500
 
             try:
+                ssh_key = get_ssh_key_path()
                 ssh_cmd = [
                     "ssh",
                     "-o",
                     "StrictHostKeyChecking=no",
                     "-o",
                     "UserKnownHostsFile=/dev/null",
+                    "-i",
+                    ssh_key,
                     "-p",
                     str(HOST_SSH_PORT),
                     f"{HOST_SSH_USER}@{HOST_SSH_HOST}",
