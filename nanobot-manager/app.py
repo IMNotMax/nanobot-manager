@@ -275,6 +275,12 @@ def api_providers():
         config = read_config()
         providers_config = config.get("providers", {})
 
+        print(f"DEBUG: providers_config = {providers_config}")
+        print(f"DEBUG: providers_config type = {type(providers_config)}")
+        print(
+            f"DEBUG: providers_config keys = {list(providers_config.keys()) if providers_config else 'EMPTY'}"
+        )
+
         providers_status = []
 
         # Iterate through all providers defined in nanobot config
@@ -283,9 +289,15 @@ def api_providers():
             providers_status.append(
                 {"name": provider_name, "configured": is_configured}
             )
+            print(f"DEBUG: Added provider {provider_name}, configured={is_configured}")
 
+        print(f"DEBUG: Returning {len(providers_status)} providers")
         return jsonify({"providers": providers_status})
     except Exception as e:
+        print(f"ERROR in api_providers: {e}")
+        import traceback
+
+        traceback.print_exc()
         return jsonify({"success": False, "error": str(e)}), 500
 
 
