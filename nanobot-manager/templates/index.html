@@ -684,32 +684,6 @@
 
             <button class="btn btn-primary" id="btn-vision-save" onclick="saveVisionConfig()">💾 Sauvegarder Vision</button>
         </div>
-            </div>
-
-            <div class="field">
-                <label>Modèle</label>
-                <input type="text" id="vision-model" placeholder="ex: llava ou gpt-4-vision">
-            </div>
-
-            <div class="field">
-                <label>Contexte (maxTokens) - Optionnel</label>
-                <div class="token-row">
-                    <select id="vision-tokens">
-                        <option value="">Aucun (par défaut du modèle)</option>
-                        <option value="2048">2K (Rapide)</option>
-                        <option value="4096">4K (Standard)</option>
-                        <option value="8192">8K (Détaillé)</option>
-                        <option value="16384">16K (Très détaillé)</option>
-                        <option value="32768">32K (Analyse complète)</option>
-                        <option value="__manual__">✏️ Personnalisé...</option>
-                    </select>
-                </div>
-                <input type="number" id="vision-tokens-manual" min="512" step="512" style="display: none; margin-top: 0.5rem;" placeholder="Saisir une valeur personnalisée">
-                <p class="token-info">Pour l'analyse d'images et vision par ordinateur. Optionnel si non supporté.</p>
-            </div>
-
-            <button class="btn btn-primary" id="btn-vision-save" onclick="saveVisionConfig()">💾 Sauvegarder Vision</button>
-        </div>
 
         <!-- Settings Tab -->
         <div id="settings" class="tab-content">
