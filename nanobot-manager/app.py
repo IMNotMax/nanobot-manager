@@ -72,8 +72,24 @@ def read_config():
         config_path.parent.mkdir(parents=True, exist_ok=True)
         write_config(DEFAULT_CONFIG)
         return DEFAULT_CONFIG.copy()
-    with open(CONFIG_PATH, "r") as f:
-        return json.load(f)
+    try:
+        with open(CONFIG_PATH, "r") as f:
+            return json.load(f)
+    except json.JSONDecodeError as e:
+        print(f"ERROR: Corrupted config file at {CONFIG_PATH}: {e}")
+        # Backup corrupted file
+        backup_path = config_path.with_suffix(".json.corrupted")
+        try:
+            config_path.rename(backup_path)
+            print(f"Backup created at {backup_path}")
+        except Exception as backup_err:
+            print(f"Failed to backup: {backup_err}")
+        # Create new default config
+        write_config(DEFAULT_CONFIG)
+        return DEFAULT_CONFIG.copy()
+    except Exception as e:
+        print(f"ERROR reading config: {e}")
+        return DEFAULT_CONFIG.copy()
 
 
 def write_config(config):
