@@ -3,21 +3,19 @@ services:
   # NANOBOT-MANAGER
   # ============================================================================
   # IMPORTANT: Configuration des permissions
-  # 
+  #
   # Le container s'exécute avec les permissions de l'utilisateur courant (PUID/PGID)
   # pour éviter les problèmes de permissions sur les fichiers partagés.
   #
   # Pour récupérer vos UID/GID automatiquement:
-  #   Sur Linux/Mac: id -u && id -g
-  #   Ou: echo "PUID=$(id -u)" >> .env && echo "PGID=$(id -g)" >> .env
-  #
-  # Pour l'utilisateur agent_smith sur Neo (192.168.2.202):
-  #   PUID=1001
-  #   PGID=1001
+  #   Linux/Mac: id -u && id -g
+  #   Ou ajouter dans .env:
+  #     echo "PUID=$(id -u)" >> .env
+  #     echo "PGID=$(id -g)" >> .env
   #
   # Si non définis, utilise 1000:1000 par défaut
   # ============================================================================
-  
+
   nanobot-manager:
     build: ./nanobot-manager
     container_name: nanobot-manager
@@ -26,15 +24,14 @@ services:
     ports:
       - "8899:8899"
     volumes:
-      # Configuration nanobot (lecture/écriture avec permissions utilisateur)
-      # On monte seulement le fichier pour éviter les problèmes de permissions sur le répertoire
-      - ~/.nanobot/config.json:/home/agent_smith/.nanobot/config.json
+      # Configuration nanobot - le fichier sera accessible avec les permissions de l'utilisateur
+      - ~/.nanobot/config.json:/home/app/.nanobot/config.json
       # SSH keys pour le mode Host
-      - ~/.ssh/nanobot-manager:/home/agent_smith/.ssh
-      # Configuration propre à nanobot-manager
+      - ~/.ssh/nanobot-manager:/home/app/.ssh
+      # Configuration propre à nanobot-manager (lecture/écriture)
       - ./manager_data:/app/config
     environment:
-      - CONFIG_PATH=/home/agent_smith/.nanobot/config.json
+      - CONFIG_PATH=/home/app/.nanobot/config.json
       - MANAGER_CONFIG_PATH=/app/config/manager.json
       - OLLAMA_URL=${OLLAMA_URL:-http://ollama:11434}
       - HTTP_PORT=${HTTP_PORT:-8899}
@@ -42,11 +39,11 @@ services:
       - HOST_SSH_USER=${HOST_SSH_USER}
       - HOST_SSH_HOST=${HOST_SSH_HOST}
       - HOST_SSH_PORT=${HOST_SSH_PORT:-22}
-      - HOME=/home/agent_smith
+      - HOME=/home/app
     networks:
       - socket-proxy-network
     restart: unless-stopped
-    
+
   socket-proxy:
     image: lscr.io/linuxserver/socket-proxy:latest
     container_name: socket-proxy
@@ -88,9 +85,7 @@ services:
       - /run
     networks:
       - socket-proxy-network
-      
+
 networks:
   socket-proxy-network:
     driver: bridge
-    # Uncomment the line below if you want to use an existing external network
-    # external: true
