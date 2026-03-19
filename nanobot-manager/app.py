@@ -157,32 +157,29 @@ def generate_ssh_key() -> Tuple[bool, str]:
 
 
 def get_provider_status(config, provider_name):
-    """Check if a provider is configured.
+    """Check if a provider is configured based on nanobot rules.
 
-    For Ollama (custom): configured if apiBase contains a URL or if using default localhost
-    For other providers: configured if apiKey is a non-empty string
+    Rule: apiKey must be a string (even empty string counts as configured in nanobot)
+    For Ollama: always considered available
     """
     providers = config.get("providers", {})
 
     # Normalize provider name
     normalized_name = normalize_provider_name(provider_name)
 
-    # Handle Ollama (custom) - check apiBase
+    # Handle Ollama - always available
     if normalized_name == "ollama":
-        # "custom" is the key used in nanobot config for Ollama
-        provider_config = providers.get("custom", {})
-        api_base = provider_config.get("apiBase", "")
-        # If apiBase is set and not empty, Ollama is configured
-        # Also consider configured if using default (no apiBase means localhost)
-        return True  # Ollama is always available locally by default
-
-    # For other providers, check if apiKey is a non-empty string
-    provider_config = providers.get(provider_name, {})
-    api_key = provider_config.get("apiKey", "")
-
-    # apiKey must be a non-empty string
-    if isinstance(api_key, str) and api_key.strip():
         return True
+
+    # For other providers, check if provider exists in config
+    # In nanobot, if provider has any config (even empty apiKey), it's considered present
+    if provider_name in providers:
+        provider_config = providers[provider_name]
+        api_key = provider_config.get("apiKey")
+        # apiKey is configured if it's a string (even empty)
+        if isinstance(api_key, str):
+            return True
+
     return False
 
 
@@ -205,16 +202,50 @@ def api_models():
     return jsonify(get_ollama_models())
 
 
-@app.route("/api/providers")
-def api_providers():
-    """Get all providers with their configuration status."""
+@app.route("/api/ollama-config")
+def api_ollama_config():
+    """Get Ollama configuration to determine if we can fetch models."""
     try:
         config = read_config()
+        providers = config.get("providers", {})
+
+        # Check both "ollama" and "custom" keys
+        ollama_config = providers.get("ollama", providers.get("custom", {}))
+        api_base = ollama_config.get("apiBase", "")
+
+        # Check if apiBase is a valid URL
+        has_url = bool(
+            api_base
+            and isinstance(api_base, str)
+            and api_base.strip().startswith("http")
+        )
+
+        return jsonify(
+            {
+                "hasUrl": has_url,
+                "apiBase": api_base if has_url else None,
+                "canFetchModels": has_url,
+            }
+        )
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/providers")
+def api_providers():
+    """Get all providers from nanobot config with their configuration status."""
+    try:
+        config = read_config()
+        providers_config = config.get("providers", {})
+
         providers_status = []
 
-        for provider in ALL_PROVIDERS:
-            is_configured = get_provider_status(config, provider)
-            providers_status.append({"name": provider, "configured": is_configured})
+        # Iterate through all providers defined in nanobot config
+        for provider_name in providers_config.keys():
+            is_configured = get_provider_status(config, provider_name)
+            providers_status.append(
+                {"name": provider_name, "configured": is_configured}
+            )
 
         return jsonify({"providers": providers_status})
     except Exception as e:
