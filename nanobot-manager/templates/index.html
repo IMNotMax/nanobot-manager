@@ -251,6 +251,188 @@
             margin-top: 0.35rem;
             margin-left: 0.05rem;
         }
+
+        .token-info code {
+            background: #0f172a;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #38bdf8;
+        }
+
+        .settings-section {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .settings-section h3 {
+            color: #38bdf8;
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .ssh-key-box {
+            background: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            padding: 0.75rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            color: #cbd5e1;
+            word-break: break-all;
+            max-height: 120px;
+            overflow-y: auto;
+            margin: 0.75rem 0;
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            width: auto;
+            display: inline-block;
+        }
+
+        .copy-btn {
+            background: #38bdf8;
+            color: #0f172a;
+            border: none;
+            margin-left: 0.5rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #0ea5e9;
+        }
+
+        .logs-container {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .logs-empty {
+            color: #64748b;
+            font-style: italic;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-success {
+            background: #064e3b;
+            color: #6ee7b7;
+        }
+
+        .status-error {
+            background: #450a0a;
+            color: #fca5a5;
+        }
+
+        /* Quick Config Mode Styles */
+        .required {
+            color: #ef4444;
+        }
+
+        .warning-box {
+            background: #451a03;
+            border: 1px solid #92400e;
+            border-radius: 6px;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .warning-icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .warning-text {
+            color: #fbbf24;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .slider-container {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .slider-container input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: #334155;
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+            margin-bottom: 0.5rem;
+        }
+
+        .slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #38bdf8;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #0f172a;
+        }
+
+        .slider-container input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: #38bdf8;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #0f172a;
+        }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+        }
+
+        .slider-value {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #38bdf8;
+            font-weight: 600;
+        }
+
+        select option:disabled {
+            color: #64748b;
+            font-style: italic;
+        }
     </style>
 </head>
 
@@ -264,36 +446,93 @@
             <button class="tab-btn active" onclick="switchTab('defaults')">Par Défaut</button>
             <button class="tab-btn" onclick="switchTab('coder')">🔧 Coder</button>
             <button class="tab-btn" onclick="switchTab('vision')">👁️ Vision</button>
+            <button class="tab-btn" onclick="switchTab('settings')">⚙️ Paramètres</button>
         </div>
 
-        <!-- Default Agent Tab -->
+        <!-- Default Agent Tab - Configuration Rapide -->
         <div id="defaults" class="tab-content active">
             <div class="current-badge">
                 Config actuelle — Provider : <span id="cur-provider">{{ current_provider }}</span> &nbsp;|&nbsp; Modèle :
-                <span id="cur-model">{{ current_model }}</span>
+                <span id="cur-model">{{ current_model }}</span> &nbsp;|&nbsp; Contexte :
+                <span id="cur-maxtokens">—</span> &nbsp;|&nbsp; Température :
+                <span id="cur-temperature">—</span>
             </div>
 
+            <!-- Provider Selection -->
             <div class="field">
-                <label>Provider</label>
-                <select id="provider">
-                    <option value="custom" {% if current_provider=='custom' %}selected{% endif %}>custom (Ollama local)</option>
-                    <option value="openai" {% if current_provider=='openai' %}selected{% endif %}>openai</option>
-                    <option value="anthropic" {% if current_provider=='anthropic' %}selected{% endif %}>anthropic</option>
-                    <option value="openrouter" {% if current_provider=='openrouter' %}selected{% endif %}>openrouter</option>
+                <label>Provider <span class="required">*</span></label>
+                <select id="provider" onchange="onProviderChange()">
+                    <option value="" disabled selected>Choisir un provider...</option>
                 </select>
+                <div id="provider-warning" class="warning-box" style="display: none;">
+                    <span class="warning-icon">⚠️</span>
+                    <span class="warning-text">Ce provider n'est pas configuré. Veuillez d'abord configurer la clé API dans l'onglet "🔌 Providers".</span>
+                </div>
             </div>
 
+            <!-- Model Selection -->
             <div class="field">
-                <label>Modèle</label>
-                <div class="model-row">
+                <label>Modèle LLM <span class="required">*</span></label>
+                <div id="model-ollama-container" class="model-row">
                     <select id="model-select">
+                        <option value="" disabled selected>Choisir un modèle Ollama...</option>
                         {% for m in ollama_models %}
-                        <option value="{{ m }}" {% if m==current_model %}selected{% endif %}>{{ m }}</option>
+                        <option value="{{ m }}">{{ m }}</option>
                         {% endfor %}
                         <option value="__manual__">✏️ Saisir manuellement...</option>
                     </select>
-                    <input type="text" id="model-manual" placeholder="ex: gpt-4o" value="{{ current_model }}">
+                    <input type="text" id="model-manual" placeholder="ex: llama3.1:8b" style="display: none;">
                     <button class="toggle-btn" id="toggle-mode" onclick="toggleManual()">Manuel</button>
+                </div>
+                <input type="text" id="model-text" placeholder="ex: gpt-4o, claude-3-opus..." style="display: none;">
+            </div>
+
+            <!-- Context Size (maxTokens) -->
+            <div class="field">
+                <label>Taille de contexte (maxTokens)</label>
+                <div class="slider-container">
+                    <input type="range" id="maxtokens-slider" min="0" max="6" value="3" step="1" oninput="updateMaxTokensLabel()">
+                    <div class="slider-labels">
+                        <span>2K</span>
+                        <span>4K</span>
+                        <span>8K</span>
+                        <span>16K</span>
+                        <span>32K</span>
+                        <span>64K</span>
+                        <span>128K</span>
+                    </div>
+                    <div class="slider-value">Valeur sélectionnée : <span id="maxtokens-value">16384</span> tokens</div>
+                </div>
+            </div>
+
+            <!-- Temperature -->
+            <div class="field">
+                <label>Température (créativité)</label>
+                <div class="slider-container">
+                    <input type="range" id="temperature-slider" min="0" max="20" value="1" step="1" oninput="updateTemperatureLabel()">
+                    <div class="slider-labels">
+                        <span>Précis (0)</span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span>Équilibré (0.5)</span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span>Créatif (1.0)</span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span>Aléatoire (1.5)</span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                        <span>Très aléatoire (2.0)</span>
+                    </div>
+                    <div class="slider-value">Valeur : <span id="temperature-value">0.1</span></div>
                 </div>
             </div>
 
@@ -385,8 +624,70 @@
             <button class="btn btn-primary" id="btn-vision-save" onclick="saveVisionConfig()">💾 Sauvegarder Vision</button>
         </div>
 
+        <!-- Settings Tab -->
+        <div id="settings" class="tab-content">
+            <!-- Execution Type Section -->
+            <div class="settings-section">
+                <h3>🔄 Mode d'exécution</h3>
+                <div class="current-badge">
+                    Actuel : <span id="settings-execution-type">—</span>
+                </div>
+
+                <div class="field">
+                    <label>Type d'exécution</label>
+                    <select id="execution-type">
+                        <option value="docker">🐳 Docker (Container)</option>
+                        <option value="host">🖥️ Machine hôte (Systemctl)</option>
+                    </select>
+                </div>
+
+                <p class="token-info">
+                    <strong>Docker :</strong> Redémarre le container nanobot-gateway via l'API Docker.<br>
+                    <strong>Machine hôte :</strong> Redémarre le service via <code>systemctl --user restart nanobot-gateway</code>
+                </p>
+
+                <button class="btn btn-primary" id="btn-settings-save" onclick="saveExecutionType()">💾 Sauvegarder les paramètres</button>
+            </div>
+
+            <!-- SSH Key Section -->
+            <div class="settings-section">
+                <h3>🔑 Clé SSH (Mode Host)</h3>
+                <p class="token-info">Générez une clé SSH et copiez-la sur la machine hôte pour utiliser le mode Host.</p>
+
+                <div id="ssh-key-status">
+                    <p class="token-info">Chargement...</p>
+                </div>
+
+                <div id="ssh-key-display" style="display: none;">
+                    <div class="status-badge status-success">✅ Clé SSH générée</div>
+                    <p class="token-info" style="margin-top: 0.75rem;">Copiez cette clé publique et ajoutez-la à <code>~/.ssh/authorized_keys</code> sur la machine hôte :</p>
+                    <div class="ssh-key-box" id="ssh-public-key"></div>
+                    <button class="btn btn-small copy-btn" onclick="copySshKey()">📋 Copier</button>
+                    <button class="btn btn-primary btn-small" onclick="regenerateSshKey()" style="margin-left: 0.5rem;">🔄 Régénérer</button>
+                </div>
+
+                <div id="ssh-key-missing" style="display: none;">
+                    <div class="status-badge status-error">⚠️ Clé SSH manquante</div>
+                    <p class="token-info" style="margin-top: 0.75rem;">Aucune clé SSH n'existe. Cliquez sur le bouton ci-dessous pour en générer une :</p>
+                    <button class="btn btn-primary" id="btn-generate-ssh" onclick="generateSshKey()" style="margin-top: 0.75rem;">🔑 Générer une clé SSH</button>
+                </div>
+            </div>
+
+            <!-- Logs Section -->
+            <div class="settings-section">
+                <h3>📜 Logs de nanobot-gateway</h3>
+                <p class="token-info">Affichage des 100 dernières lignes. Rafraîchissez la page pour obtenir les logs à jour.</p>
+
+                <button class="btn btn-primary btn-small" id="btn-refresh-logs" onclick="loadLogs()" style="margin-bottom: 0.75rem;">🔄 Rafraîchir les logs</button>
+
+                <div id="logs-container" class="logs-container">
+                    <div class="logs-empty">Chargement des logs...</div>
+                </div>
+            </div>
+        </div>
+
         <hr class="divider">
-        <button class="btn btn-danger" id="btn-restart" onclick="restartContainer()">🔄 Restart nanobot-gateway</button>
+        <button class="btn btn-danger" id="btn-restart" onclick="restartContainer()">🔄 Redémarrer Nanobot</button>
 
         <div id="toast" class="toast"></div>
     </div>
@@ -405,18 +706,225 @@
             // Load data for specific tabs
             if (tabName === 'coder') loadCoderConfig();
             if (tabName === 'vision') loadVisionConfig();
+            if (tabName === 'settings') {
+                loadExecutionType();
+                loadSshKey();
+                loadLogs();
+            }
         }
 
-        // ========== Default Agent Tab ==========
+        // ========== Default Agent Tab - Quick Config ==========
         let manualMode = false;
+        let providersList = [];
+        const TOKEN_VALUES = [2048, 4096, 8192, 16384, 32768, 65536, 131072];
+        
+        // Load providers on page load
+        async function loadProviders() {
+            try {
+                const res = await fetch('/api/providers');
+                const data = await res.json();
+                if (data.providers) {
+                    providersList = data.providers;
+                    const select = document.getElementById('provider');
+                    // Clear existing options except the placeholder
+                    select.innerHTML = '<option value="" disabled selected>Choisir un provider...</option>';
+                    
+                    data.providers.forEach(p => {
+                        const option = document.createElement('option');
+                        option.value = p.name;
+                        option.textContent = p.name + (p.configured ? '' : ' (non configuré)');
+                        option.disabled = !p.configured;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (e) {
+                console.error('Erreur chargement providers:', e);
+            }
+        }
+
+        // Check if selected provider is configured
+        function onProviderChange() {
+            const provider = document.getElementById('provider').value;
+            const providerData = providersList.find(p => p.name === provider);
+            const warningBox = document.getElementById('provider-warning');
+            
+            if (providerData && !providerData.configured) {
+                warningBox.style.display = 'flex';
+            } else {
+                warningBox.style.display = 'none';
+            }
+            
+            // Toggle between Ollama dropdown and text input
+            const ollamaContainer = document.getElementById('model-ollama-container');
+            const textInput = document.getElementById('model-text');
+            
+            if (provider === 'custom') {
+                ollamaContainer.style.display = 'flex';
+                textInput.style.display = 'none';
+            } else {
+                ollamaContainer.style.display = 'none';
+                textInput.style.display = 'block';
+            }
+        }
+
+        // Model selection handling
         const modelSelect = document.getElementById('model-select');
         const modelManual = document.getElementById('model-manual');
 
-        const currentModel = "{{ current_model }}";
-        const options = Array.from(modelSelect.options).map(o => o.value).filter(v => v !== '__manual__');
-        if (currentModel && !options.includes(currentModel)) {
-            switchToManual();
+        modelSelect.addEventListener('change', () => {
+            if (modelSelect.value === '__manual__') switchToManual();
+        });
+
+        function switchToManual() {
+            manualMode = true;
+            modelSelect.style.display = 'none';
+            modelManual.style.display = 'block';
+            document.getElementById('toggle-mode').textContent = 'Liste';
+            modelManual.focus();
         }
+
+        function toggleManual() {
+            if (manualMode) {
+                manualMode = false;
+                modelSelect.style.display = 'block';
+                modelManual.style.display = 'none';
+                document.getElementById('toggle-mode').textContent = 'Manuel';
+            } else {
+                switchToManual();
+            }
+        }
+
+        function getModel() {
+            const provider = document.getElementById('provider').value;
+            if (provider === 'custom') {
+                return manualMode ? modelManual.value.trim() : modelSelect.value;
+            } else {
+                return document.getElementById('model-text').value.trim();
+            }
+        }
+
+        // Slider handlers
+        function updateMaxTokensLabel() {
+            const slider = document.getElementById('maxtokens-slider');
+            const value = TOKEN_VALUES[parseInt(slider.value)];
+            document.getElementById('maxtokens-value').textContent = value.toLocaleString();
+        }
+
+        function updateTemperatureLabel() {
+            const slider = document.getElementById('temperature-slider');
+            const value = (parseInt(slider.value) / 10).toFixed(1);
+            document.getElementById('temperature-value').textContent = value;
+        }
+
+        function setMaxTokensSlider(value) {
+            const index = TOKEN_VALUES.indexOf(parseInt(value));
+            if (index !== -1) {
+                document.getElementById('maxtokens-slider').value = index;
+                updateMaxTokensLabel();
+            }
+        }
+
+        function setTemperatureSlider(value) {
+            const sliderValue = Math.round(parseFloat(value) * 10);
+            document.getElementById('temperature-slider').value = sliderValue;
+            updateTemperatureLabel();
+        }
+
+        // Load current configuration
+        async function loadDefaultConfig() {
+            try {
+                const res = await fetch('/api/config');
+                const data = await res.json();
+                
+                // Set provider
+                if (data.provider) {
+                    document.getElementById('provider').value = data.provider;
+                    onProviderChange();
+                }
+                
+                // Set model
+                if (data.model) {
+                    const provider = data.provider;
+                    if (provider === 'custom') {
+                        // Try to find in dropdown
+                        const select = document.getElementById('model-select');
+                        const options = Array.from(select.options).map(o => o.value);
+                        if (options.includes(data.model)) {
+                            select.value = data.model;
+                        } else {
+                            switchToManual();
+                            modelManual.value = data.model;
+                        }
+                    } else {
+                        document.getElementById('model-text').value = data.model;
+                    }
+                }
+                
+                // Set sliders
+                if (data.maxTokens) {
+                    setMaxTokensSlider(data.maxTokens);
+                }
+                if (data.temperature !== undefined) {
+                    setTemperatureSlider(data.temperature);
+                }
+                
+                // Update badge
+                document.getElementById('cur-provider').textContent = data.provider || '—';
+                document.getElementById('cur-model').textContent = data.model || '—';
+                document.getElementById('cur-maxtokens').textContent = data.maxTokens ? data.maxTokens.toLocaleString() : '—';
+                document.getElementById('cur-temperature').textContent = data.temperature !== undefined ? data.temperature : '—';
+            } catch (e) {
+                console.error('Erreur chargement config:', e);
+            }
+        }
+
+        // ========== Default Config ==========
+        async function saveConfig() {
+            const btn = document.getElementById('btn-save');
+            const model = getModel();
+            const provider = document.getElementById('provider').value;
+            const maxTokens = TOKEN_VALUES[parseInt(document.getElementById('maxtokens-slider').value)];
+            const temperature = parseFloat(document.getElementById('temperature-value').textContent);
+            
+            if (!provider) return showToast('Veuillez sélectionner un provider', 'error');
+            if (!model) return showToast('Veuillez saisir un modèle', 'error');
+            
+            // Check if provider is configured
+            const providerData = providersList.find(p => p.name === provider);
+            if (providerData && !providerData.configured) {
+                return showToast('Ce provider n\'est pas configuré. Veuillez d\'abord configurer la clé API.', 'error');
+            }
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Sauvegarde...';
+            try {
+                const res = await fetch('/api/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model, provider, maxTokens, temperature })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    document.getElementById('cur-model').textContent = model;
+                    document.getElementById('cur-provider').textContent = provider;
+                    document.getElementById('cur-maxtokens').textContent = maxTokens.toLocaleString();
+                    document.getElementById('cur-temperature').textContent = temperature;
+                } else {
+                    showToast('Erreur : ' + data.error, 'error');
+                }
+            } catch (e) {
+                showToast('Erreur réseau', 'error');
+            }
+            btn.disabled = false;
+            btn.innerHTML = '💾 Sauvegarder la configuration';
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProviders();
+            loadDefaultConfig();
+        });
 
         modelSelect.addEventListener('change', () => {
             if (modelSelect.value === '__manual__') switchToManual();
@@ -612,11 +1120,140 @@
             btn.innerHTML = '💾 Sauvegarder Vision';
         }
 
+        // ========== Execution Type Settings ==========
+        async function loadExecutionType() {
+            try {
+                const res = await fetch('/api/execution-type');
+                const data = await res.json();
+                document.getElementById('execution-type').value = data.execution_type || 'docker';
+                document.getElementById('settings-execution-type').textContent = data.execution_type || 'docker';
+            } catch (e) {
+                showToast('Erreur lors du chargement des paramètres', 'error');
+            }
+        }
+
+        async function saveExecutionType() {
+            const btn = document.getElementById('btn-settings-save');
+            const execution_type = document.getElementById('execution-type').value;
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Sauvegarde...';
+            try {
+                const res = await fetch('/api/execution-type/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ execution_type })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    document.getElementById('settings-execution-type').textContent = execution_type;
+                } else {
+                    showToast('Erreur : ' + data.error, 'error');
+                }
+            } catch (e) {
+                showToast('Erreur réseau', 'error');
+            }
+            btn.disabled = false;
+            btn.innerHTML = '💾 Sauvegarder les paramètres';
+        }
+
+        // ========== SSH Key Management ==========
+        async function loadSshKey() {
+            try {
+                const res = await fetch('/api/ssh-key');
+                const data = await res.json();
+
+                const display = document.getElementById('ssh-key-display');
+                const missing = document.getElementById('ssh-key-missing');
+                const status = document.getElementById('ssh-key-status');
+
+                if (data.exists && data.public_key) {
+                    display.style.display = 'block';
+                    missing.style.display = 'none';
+                    status.style.display = 'none';
+                    document.getElementById('ssh-public-key').textContent = data.public_key;
+                } else {
+                    display.style.display = 'none';
+                    missing.style.display = 'block';
+                    status.style.display = 'none';
+                }
+            } catch (e) {
+                console.error('Erreur SSH key:', e);
+                document.getElementById('ssh-key-status').innerHTML = '<div class="status-badge status-error">❌ Erreur</div>';
+            }
+        }
+
+        async function generateSshKey() {
+            const btn = document.getElementById('btn-generate-ssh');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Génération...';
+
+            try {
+                const res = await fetch('/api/ssh-key/generate', { method: 'POST' });
+                const data = await res.json();
+
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    await loadSshKey();
+                } else {
+                    showToast('Erreur : ' + data.error, 'error');
+                }
+            } catch (e) {
+                showToast('Erreur réseau', 'error');
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '🔑 Générer une clé SSH';
+        }
+
+        function copySshKey() {
+            const keyText = document.getElementById('ssh-public-key').textContent;
+            navigator.clipboard.writeText(keyText).then(() => {
+                showToast('✅ Clé SSH copiée dans le presse-papiers', 'success');
+            }).catch(() => {
+                showToast('❌ Impossible de copier', 'error');
+            });
+        }
+
+        async function regenerateSshKey() {
+            if (confirm('Êtes-vous sûr ? Cela régénérera une nouvelle clé SSH.')) {
+                await generateSshKey();
+            }
+        }
+
+        // ========== Logs Management ==========
+        async function loadLogs() {
+            const btn = document.getElementById('btn-refresh-logs');
+            const container = document.getElementById('logs-container');
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Chargement...';
+
+            try {
+                const res = await fetch('/api/logs');
+                const data = await res.json();
+
+                if (data.success && data.logs) {
+                    container.textContent = data.logs;
+                    container.classList.remove('logs-empty');
+                } else {
+                    const error = data.error || 'Impossible de charger les logs';
+                    container.innerHTML = `<div class="logs-empty">❌ ${error}</div>`;
+                }
+            } catch (e) {
+                container.innerHTML = '<div class="logs-empty">❌ Erreur réseau lors du chargement</div>';
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '🔄 Rafraîchir les logs';
+        }
+
         // ========== Restart Container ==========
         async function restartContainer() {
             const btn = document.getElementById('btn-restart');
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner"></span>Restart en cours...';
+            btn.innerHTML = '<span class="spinner"></span>Redémarrage en cours...';
             try {
                 const res = await fetch('/api/restart', { method: 'POST' });
                 const data = await res.json();
@@ -625,7 +1262,7 @@
                 showToast('Erreur réseau', 'error');
             }
             btn.disabled = false;
-            btn.innerHTML = '🔄 Restart nanobot-gateway';
+            btn.innerHTML = '🔄 Redémarrer Nanobot';
         }
     </script>
 </body>
