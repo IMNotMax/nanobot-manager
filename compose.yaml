@@ -9,7 +9,7 @@ services:
     ports:
       - "8899:8899"
     volumes:
-      - ~/.nanobot:/root/.nanobot:ro
+      - ~/.nanobot:/root/.nanobot
       - ~/.ssh/nanobot-manager:/root/.ssh
     environment:
       - CONFIG_PATH=/root/.nanobot/config.json
