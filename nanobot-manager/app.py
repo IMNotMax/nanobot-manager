@@ -33,8 +33,9 @@ DEFAULT_CONFIG = {
 }
 
 # Liste complète des providers supportés par Nanobot
+# "custom" et "ollama" sont équivalents (Ollama local)
 ALL_PROVIDERS = [
-    "custom",
+    "ollama",  # Ollama local (alias de "custom")
     "anthropic",
     "openai",
     "openrouter",
@@ -54,6 +55,16 @@ ALL_PROVIDERS = [
 ]
 
 
+def normalize_provider_name(provider_name):
+    """Normalize provider name - 'custom' and 'ollama' are equivalent."""
+    if not provider_name:
+        return "ollama"
+    provider_lower = provider_name.lower()
+    if provider_lower == "custom":
+        return "ollama"
+    return provider_lower
+
+
 def read_config():
     config_path = pathlib.Path(CONFIG_PATH)
     if not config_path.exists():
@@ -69,9 +80,33 @@ def write_config(config):
         json.dump(config, f, indent=2)
 
 
-def get_ollama_models():
+def get_ollama_url():
+    """Get Ollama URL from config or use default."""
     try:
-        resp = requests.get(f"{OLLAMA_URL}/api/tags", timeout=5)
+        config = read_config()
+        providers = config.get("providers", {})
+        custom_config = providers.get("custom", {})
+        api_base = custom_config.get("apiBase", "")
+
+        # If apiBase is set and contains a URL, use it
+        if api_base and isinstance(api_base, str) and api_base.strip():
+            # Remove trailing /v1 if present (nanobot format)
+            url = api_base.rstrip("/")
+            if url.endswith("/v1"):
+                url = url[:-3]
+            return url
+    except Exception as e:
+        print(f"Error reading Ollama URL from config: {e}")
+
+    # Fall back to environment variable
+    return OLLAMA_URL
+
+
+def get_ollama_models():
+    """Fetch available models from Ollama."""
+    try:
+        ollama_url = get_ollama_url()
+        resp = requests.get(f"{ollama_url}/api/tags", timeout=5)
         if resp.ok:
             return [m["name"] for m in resp.json().get("models", [])]
     except Exception as e:
@@ -122,27 +157,45 @@ def generate_ssh_key() -> Tuple[bool, str]:
 
 
 def get_provider_status(config, provider_name):
-    """Check if a provider is configured (has API key)."""
+    """Check if a provider is configured.
+
+    For Ollama (custom): configured if apiBase contains a URL or if using default localhost
+    For other providers: configured if apiKey is a non-empty string
+    """
     providers = config.get("providers", {})
+
+    # Normalize provider name
+    normalized_name = normalize_provider_name(provider_name)
+
+    # Handle Ollama (custom) - check apiBase
+    if normalized_name == "ollama":
+        # "custom" is the key used in nanobot config for Ollama
+        provider_config = providers.get("custom", {})
+        api_base = provider_config.get("apiBase", "")
+        # If apiBase is set and not empty, Ollama is configured
+        # Also consider configured if using default (no apiBase means localhost)
+        return True  # Ollama is always available locally by default
+
+    # For other providers, check if apiKey is a non-empty string
     provider_config = providers.get(provider_name, {})
-
-    # Provider is configured if it has an API key
-    # Special case: 'custom' provider (Ollama) is always considered configured
-    if provider_name == "custom":
-        return True
-
     api_key = provider_config.get("apiKey", "")
-    return bool(api_key and api_key.strip())
+
+    # apiKey must be a non-empty string
+    if isinstance(api_key, str) and api_key.strip():
+        return True
+    return False
 
 
 @app.route("/")
 def index():
     config = read_config()
     defaults = config.get("agents", {}).get("defaults", {})
+    # Normalize provider name for display
+    provider = normalize_provider_name(defaults.get("provider", ""))
     return render_template(
         "index.html",
         current_model=defaults.get("model", ""),
-        current_provider=defaults.get("provider", ""),
+        current_provider=provider,
         ollama_models=get_ollama_models(),
     )
 
@@ -172,10 +225,12 @@ def api_providers():
 def api_config():
     config = read_config()
     defaults = config.get("agents", {}).get("defaults", {})
+    # Normalize provider name
+    provider = normalize_provider_name(defaults.get("provider", ""))
     return jsonify(
         {
             "model": defaults.get("model", ""),
-            "provider": defaults.get("provider", ""),
+            "provider": provider,
             "maxTokens": defaults.get("maxTokens", 16384),
             "temperature": defaults.get("temperature", 0.1),
         }
@@ -214,7 +269,9 @@ def api_update():
         config = read_config()
         config.setdefault("agents", {}).setdefault("defaults", {})
         config["agents"]["defaults"]["model"] = model
-        config["agents"]["defaults"]["provider"] = provider
+        # Save "custom" in file for Ollama (nanobot convention)
+        provider_to_save = "custom" if provider.lower() == "ollama" else provider
+        config["agents"]["defaults"]["provider"] = provider_to_save
         config["agents"]["defaults"]["maxTokens"] = max_tokens
         config["agents"]["defaults"]["temperature"] = temperature
         write_config(config)
