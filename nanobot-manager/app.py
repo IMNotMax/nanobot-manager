@@ -271,15 +271,20 @@ def api_ollama_config():
 @app.route("/api/providers")
 def api_providers():
     """Get all providers from nanobot config with their configuration status."""
+    import sys
+
     try:
         config = read_config()
         providers_config = config.get("providers", {})
 
-        print(f"DEBUG: providers_config = {providers_config}")
-        print(f"DEBUG: providers_config type = {type(providers_config)}")
+        sys.stdout.flush()
+        print(f"DEBUG: providers_config = {providers_config}", flush=True)
+        print(f"DEBUG: providers_config type = {type(providers_config)}", flush=True)
         print(
-            f"DEBUG: providers_config keys = {list(providers_config.keys()) if providers_config else 'EMPTY'}"
+            f"DEBUG: providers_config keys = {list(providers_config.keys()) if providers_config else 'EMPTY'}",
+            flush=True,
         )
+        sys.stdout.flush()
 
         providers_status = []
 
@@ -289,15 +294,20 @@ def api_providers():
             providers_status.append(
                 {"name": provider_name, "configured": is_configured}
             )
-            print(f"DEBUG: Added provider {provider_name}, configured={is_configured}")
+            print(
+                f"DEBUG: Added provider {provider_name}, configured={is_configured}",
+                flush=True,
+            )
 
-        print(f"DEBUG: Returning {len(providers_status)} providers")
+        print(f"DEBUG: Returning {len(providers_status)} providers", flush=True)
+        sys.stdout.flush()
         return jsonify({"providers": providers_status})
     except Exception as e:
-        print(f"ERROR in api_providers: {e}")
+        print(f"ERROR in api_providers: {e}", flush=True)
         import traceback
 
         traceback.print_exc()
+        sys.stdout.flush()
         return jsonify({"success": False, "error": str(e)}), 500
 
 

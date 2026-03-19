@@ -801,24 +801,35 @@
         // Load providers on page load
         async function loadProviders() {
             try {
+                console.log('DEBUG JS: Loading providers...');
                 const res = await fetch('/api/providers');
                 const data = await res.json();
-                if (data.providers) {
+                console.log('DEBUG JS: Received data:', data);
+                console.log('DEBUG JS: data.providers =', data.providers);
+                console.log('DEBUG JS: data.providers length =', data.providers ? data.providers.length : 'undefined');
+                
+                if (data.providers && Array.isArray(data.providers) && data.providers.length > 0) {
                     providersList = data.providers;
                     const select = document.getElementById('provider');
                     // Clear existing options except the placeholder
                     select.innerHTML = '<option value="" disabled selected>Choisir un provider...</option>';
                     
                     data.providers.forEach(p => {
+                        console.log('DEBUG JS: Adding provider:', p.name, 'configured:', p.configured);
                         const option = document.createElement('option');
                         option.value = p.name;
                         option.textContent = p.name + (p.configured ? '' : ' (non configuré)');
                         option.disabled = !p.configured;
                         select.appendChild(option);
                     });
+                    console.log('DEBUG JS: Finished loading', data.providers.length, 'providers');
+                } else {
+                    console.warn('DEBUG JS: No providers found or empty array');
+                    const select = document.getElementById('provider');
+                    select.innerHTML = '<option value="" disabled selected>Aucun provider trouvé</option>';
                 }
             } catch (e) {
-                console.error('Erreur chargement providers:', e);
+                console.error('DEBUG JS: Error loading providers:', e);
             }
         }
 
