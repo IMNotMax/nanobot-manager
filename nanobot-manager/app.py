@@ -67,10 +67,54 @@ def normalize_provider_name(provider_name):
 
 
 def read_config():
+    import sys
+
     config_path = pathlib.Path(CONFIG_PATH)
+    print(f"DEBUG read_config: CONFIG_PATH = {CONFIG_PATH}", flush=True)
+    print(
+        f"DEBUG read_config: config_path.exists() = {config_path.exists()}", flush=True
+    )
+    print(
+        f"DEBUG read_config: config_path.absolute() = {config_path.absolute()}",
+        flush=True,
+    )
+
     if not config_path.exists():
+        print(f"DEBUG read_config: File not found, creating default", flush=True)
         config_path.parent.mkdir(parents=True, exist_ok=True)
         write_config(DEFAULT_CONFIG)
+        return DEFAULT_CONFIG.copy()
+
+    try:
+        with open(CONFIG_PATH, "r") as f:
+            content = f.read()
+            print(
+                f"DEBUG read_config: File content length = {len(content)}", flush=True
+            )
+            print(f"DEBUG read_config: First 500 chars = {content[:500]}", flush=True)
+            config = json.loads(content)
+            print(
+                f"DEBUG read_config: Parsed config keys = {list(config.keys())}",
+                flush=True,
+            )
+            return config
+    except json.JSONDecodeError as e:
+        print(f"ERROR: Corrupted config file at {CONFIG_PATH}: {e}", flush=True)
+        # Backup corrupted file
+        backup_path = config_path.with_suffix(".json.corrupted")
+        try:
+            config_path.rename(backup_path)
+            print(f"Backup created at {backup_path}", flush=True)
+        except Exception as backup_err:
+            print(f"Failed to backup: {backup_err}", flush=True)
+        # Create new default config
+        write_config(DEFAULT_CONFIG)
+        return DEFAULT_CONFIG.copy()
+    except Exception as e:
+        print(f"ERROR reading config: {e}", flush=True)
+        import traceback
+
+        traceback.print_exc()
         return DEFAULT_CONFIG.copy()
     try:
         with open(CONFIG_PATH, "r") as f:
