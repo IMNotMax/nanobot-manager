@@ -6,9 +6,14 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends openssh-client && rm -rf /var/lib/apt/lists/*
 
 # Create a generic app user (UID will be overridden at runtime via docker-compose user: directive)
+# The directory is created with mode 755 so any UID can access it after volume mount
 RUN groupadd -g 1000 app && \
     useradd -u 1000 -g app -m -s /bin/bash app && \
     mkdir -p /home/app/.nanobot /home/app/.ssh /app/config && \
+    chmod 755 /home/app && \
+    chmod 755 /home/app/.nanobot && \
+    chmod 755 /home/app/.ssh && \
+    chmod 755 /app/config && \
     chown -R app:app /home/app /app
 
 # Copy application files
