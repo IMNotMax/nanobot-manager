@@ -41,9 +41,9 @@ DEFAULT_CONFIG = {
 }
 
 # Liste complète des providers supportés par Nanobot
-# "custom" et "ollama" sont équivalents (Ollama local)
 ALL_PROVIDERS = [
-    "ollama",  # Ollama local (alias de "custom")
+    "ollama",  # Ollama local (toujours configuré, service local)
+    "custom",  # Provider personnalisé (requiert apiKey + apiBase)
     "anthropic",
     "openai",
     "openrouter",
@@ -64,13 +64,10 @@ ALL_PROVIDERS = [
 
 
 def normalize_provider_name(provider_name):
-    """Normalize provider name - 'custom' and 'ollama' are equivalent."""
+    """Normalize provider name - keep original case for display."""
     if not provider_name:
-        return "ollama"
-    provider_lower = provider_name.lower()
-    if provider_lower == "custom":
-        return "ollama"
-    return provider_lower
+        return ""
+    return provider_name.strip()
 
 
 def read_config():
@@ -243,23 +240,19 @@ def generate_ssh_key() -> Tuple[bool, str]:
 def get_provider_status(config, provider_name):
     """Check if a provider is properly configured.
 
-    For Ollama: always considered available (local)
+    For Ollama: always considered available (local service)
     For other providers: configured only if apiKey is a non-empty string
     """
     providers = config.get("providers", {})
 
-    # Normalize provider name
-    normalized_name = normalize_provider_name(provider_name)
-
-    # Handle Ollama - always available locally
-    if normalized_name == "ollama":
+    # Ollama is always available (local service)
+    if provider_name.lower() == "ollama":
         return True
 
     # For other providers, check if apiKey is a non-empty string
     if provider_name in providers:
         provider_config = providers[provider_name]
         api_key = provider_config.get("apiKey", "")
-        # Provider is configured only if apiKey is a non-empty string
         if isinstance(api_key, str) and api_key.strip():
             return True
 

@@ -230,14 +230,35 @@ class TestProvidersEndpoints:
                 assert "configured" in provider
                 assert isinstance(provider["configured"], bool)
 
-    def test_get_providers_custom_always_configured(self, client):
-        """Test that 'custom' provider is always considered configured."""
-        config_with_custom = {
+    def test_get_providers_custom_needs_apikey(self, client):
+        """Test that 'custom' provider requires apiKey to be configured (like other providers)."""
+        config_with_custom_no_key = {
             "providers": {
                 "custom": {"apiKey": ""},
             }
         }
-        with patch("app.read_config", return_value=config_with_custom):
+        with patch("app.read_config", return_value=config_with_custom_no_key):
+            response = client.get("/api/providers")
+            assert response.status_code == 200
+            data = json.loads(response.data)
+
+            custom_provider = next(
+                (p for p in data["providers"] if p["name"] == "custom"), None
+            )
+            assert custom_provider is not None
+            assert custom_provider["configured"] is False
+
+    def test_get_providers_custom_with_apikey(self, client):
+        """Test that 'custom' provider is configured when apiKey is provided."""
+        config_with_custom_with_key = {
+            "providers": {
+                "custom": {
+                    "apiKey": "some-key",
+                    "apiBase": "http://custom.endpoint.com",
+                },
+            }
+        }
+        with patch("app.read_config", return_value=config_with_custom_with_key):
             response = client.get("/api/providers")
             assert response.status_code == 200
             data = json.loads(response.data)

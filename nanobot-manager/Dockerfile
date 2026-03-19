@@ -5,16 +5,18 @@ WORKDIR /app
 # Install SSH client for host-based execution and SSH key generation
 RUN apt-get update && apt-get install -y --no-install-recommends openssh-client && rm -rf /var/lib/apt/lists/*
 
-# Create a generic app user (UID will be overridden at runtime via docker-compose user: directive)
-# The directory is created with mode 755 so any UID can access it after volume mount
-RUN groupadd -g 1000 app && \
-    useradd -u 1000 -g app -m -s /bin/bash app && \
-    mkdir -p /home/app/.nanobot /home/app/.ssh /app/config && \
-    chmod 755 /home/app && \
-    chmod 755 /home/app/.nanobot && \
-    chmod 755 /home/app/.ssh && \
+# Create users for common UIDs (1000 and 1001) to avoid "No user exists for uid" errors
+# These users are only for SSH key generation - actual container runs via docker-compose user: directive
+RUN groupadd -g 1000 app 2>/dev/null || true && \
+    groupadd -g 1001 agent_smith 2>/dev/null || true && \
+    useradd -u 1000 -g app -m -s /bin/bash app 2>/dev/null || true && \
+    useradd -u 1001 -g agent_smith -m -s /bin/bash agent_smith 2>/dev/null || true && \
+    mkdir -p /home/app/.nanobot /home/app/.ssh /home/agent_smith/.ssh /app/config && \
+    chmod 755 /home/app /home/agent_smith && \
+    chmod 755 /home/app/.nanobot /home/app/.ssh /home/agent_smith/.ssh && \
     chmod 755 /app/config && \
-    chown -R app:app /home/app /app
+    chown -R app:app /home/app /app && \
+    chown -R agent_smith:agent_smith /home/agent_smith
 
 # Copy application files
 COPY requirements.txt .
@@ -28,7 +30,7 @@ RUN chown -R app:app /app
 
 EXPOSE 8899
 
-# Run as app user (UID/GID will be set by docker-compose user: directive)
+# Default user is app - but docker-compose overrides this with user: directive
 USER app
 
 CMD ["python", "app.py"]

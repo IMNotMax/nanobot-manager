@@ -870,7 +870,7 @@
             const ollamaContainer = document.getElementById('model-ollama-container');
             const textInput = document.getElementById('model-text');
             
-            if (provider === 'ollama' || provider === 'custom') {
+            if (provider === 'ollama') {
                 // For Ollama, check if apiBase is configured
                 try {
                     const res = await fetch('/api/ollama-config');
@@ -958,7 +958,7 @@
             const provider = document.getElementById('provider').value;
             const ollamaContainer = document.getElementById('model-ollama-container');
             
-            if ((provider === 'ollama' || provider === 'custom') && ollamaContainer.style.display !== 'none') {
+            if ((provider === 'ollama') && ollamaContainer.style.display !== 'none') {
                 // Ollama with dropdown (apiBase configured)
                 return manualMode ? modelManual.value.trim() : modelSelect.value;
             } else {
@@ -1012,7 +1012,7 @@
                     const provider = data.provider;
                     const ollamaContainer = document.getElementById('model-ollama-container');
                     
-                    if (provider === 'ollama' || provider === 'custom') {
+                    if (provider === 'ollama') {
                         // Check if we're showing dropdown or text input
                         if (ollamaContainer.style.display !== 'none') {
                             // Dropdown mode - try to select the model
@@ -1307,7 +1307,7 @@
             const ollamaContainer = document.getElementById('coder-model-ollama-container');
             const textInput = document.getElementById('coder-model-text');
             
-            if (provider === 'ollama' || provider === 'custom') {
+            if (provider === 'ollama') {
                 ollamaContainer.style.display = 'flex';
                 textInput.style.display = 'none';
                 await loadCoderOllamaModels();
@@ -1361,7 +1361,7 @@
             const provider = document.getElementById('coder-provider').value;
             const ollamaContainer = document.getElementById('coder-model-ollama-container');
             
-            if ((provider === 'ollama' || provider === 'custom') && ollamaContainer.style.display !== 'none') {
+            if ((provider === 'ollama') && ollamaContainer.style.display !== 'none') {
                 return coderManualMode 
                     ? document.getElementById('coder-model-manual').value.trim()
                     : document.getElementById('coder-model-select').value;
@@ -1383,7 +1383,7 @@
                     const provider = data.provider;
                     const ollamaContainer = document.getElementById('coder-model-ollama-container');
                     
-                    if (provider === 'ollama' || provider === 'custom') {
+                    if (provider === 'ollama') {
                         if (ollamaContainer.style.display !== 'none') {
                             const select = document.getElementById('coder-model-select');
                             const options = Array.from(select.options).map(o => o.value);
@@ -1470,7 +1470,7 @@
             const ollamaContainer = document.getElementById('vision-model-ollama-container');
             const textInput = document.getElementById('vision-model-text');
             
-            if (provider === 'ollama' || provider === 'custom') {
+            if (provider === 'ollama') {
                 ollamaContainer.style.display = 'flex';
                 textInput.style.display = 'none';
                 await loadVisionOllamaModels();
@@ -1524,7 +1524,7 @@
             const provider = document.getElementById('vision-provider').value;
             const ollamaContainer = document.getElementById('vision-model-ollama-container');
             
-            if ((provider === 'ollama' || provider === 'custom') && ollamaContainer.style.display !== 'none') {
+            if ((provider === 'ollama') && ollamaContainer.style.display !== 'none') {
                 return visionManualMode 
                     ? document.getElementById('vision-model-manual').value.trim()
                     : document.getElementById('vision-model-select').value;
@@ -1546,7 +1546,7 @@
                     const provider = data.provider;
                     const ollamaContainer = document.getElementById('vision-model-ollama-container');
                     
-                    if (provider === 'ollama' || provider === 'custom') {
+                    if (provider === 'ollama') {
                         if (ollamaContainer.style.display !== 'none') {
                             const select = document.getElementById('vision-model-select');
                             const options = Array.from(select.options).map(o => o.value);
