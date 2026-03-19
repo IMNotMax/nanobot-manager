@@ -61,4 +61,6 @@ services:
       - socket-proxy-network
 networks:
   socket-proxy-network:
-    external: true
+    driver: bridge
+    # Uncomment the line below if you want to use an existing external network
+    # external: true
