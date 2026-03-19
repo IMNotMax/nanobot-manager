@@ -786,28 +786,78 @@
             }
         }
 
-        // Check if selected provider is configured
-        function onProviderChange() {
+        // Check if selected provider is configured and handle model input type
+        async function onProviderChange() {
             const provider = document.getElementById('provider').value;
             const providerData = providersList.find(p => p.name === provider);
             const warningBox = document.getElementById('provider-warning');
+            const warningText = warningBox.querySelector('.warning-text');
             
             if (providerData && !providerData.configured) {
                 warningBox.style.display = 'flex';
+                warningText.textContent = `Le provider "${provider}" n'est pas configuré. Veuillez ajouter votre clé API dans le fichier ~/.nanobot/config.json sous la section providers.${provider}.apiKey`;
             } else {
                 warningBox.style.display = 'none';
             }
             
-            // Toggle between Ollama dropdown and text input
+            // Handle model input based on provider
             const ollamaContainer = document.getElementById('model-ollama-container');
             const textInput = document.getElementById('model-text');
             
-            if (provider === 'custom') {
-                ollamaContainer.style.display = 'flex';
-                textInput.style.display = 'none';
+            if (provider === 'ollama' || provider === 'custom') {
+                // For Ollama, check if apiBase is configured
+                try {
+                    const res = await fetch('/api/ollama-config');
+                    const data = await res.json();
+                    
+                    if (data.canFetchModels) {
+                        // apiBase is configured, show dropdown with models
+                        ollamaContainer.style.display = 'flex';
+                        textInput.style.display = 'none';
+                        // Refresh models list
+                        await loadOllamaModels();
+                    } else {
+                        // apiBase not configured, use text input
+                        ollamaContainer.style.display = 'none';
+                        textInput.style.display = 'block';
+                        textInput.placeholder = "ex: llama3.1:8b (saisir le nom du modèle)";
+                    }
+                } catch (e) {
+                    console.error('Erreur chargement config Ollama:', e);
+                    // Fallback to text input
+                    ollamaContainer.style.display = 'none';
+                    textInput.style.display = 'block';
+                }
             } else {
+                // For other providers, always use text input
                 ollamaContainer.style.display = 'none';
                 textInput.style.display = 'block';
+                textInput.placeholder = `ex: modèle ${provider}`;
+            }
+        }
+        
+        // Load Ollama models dynamically
+        async function loadOllamaModels() {
+            try {
+                const res = await fetch('/api/models');
+                const models = await res.json();
+                const select = document.getElementById('model-select');
+                
+                // Keep placeholder and manual option
+                select.innerHTML = `
+                    <option value="" disabled selected>Choisir un modèle Ollama...</option>
+                    <option value="__manual__">✏️ Saisir manuellement...</option>
+                `;
+                
+                // Add fetched models
+                models.forEach(m => {
+                    const option = document.createElement('option');
+                    option.value = m;
+                    option.textContent = m;
+                    select.appendChild(option);
+                });
+            } catch (e) {
+                console.error('Erreur chargement modèles Ollama:', e);
             }
         }
 
@@ -840,9 +890,13 @@
 
         function getModel() {
             const provider = document.getElementById('provider').value;
-            if (provider === 'custom') {
+            const ollamaContainer = document.getElementById('model-ollama-container');
+            
+            if ((provider === 'ollama' || provider === 'custom') && ollamaContainer.style.display !== 'none') {
+                // Ollama with dropdown (apiBase configured)
                 return manualMode ? modelManual.value.trim() : modelSelect.value;
             } else {
+                // Ollama without apiBase or other providers - use text input
                 return document.getElementById('model-text').value.trim();
             }
         }
