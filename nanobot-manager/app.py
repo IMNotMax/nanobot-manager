@@ -380,14 +380,44 @@ def api_update():
     except (ValueError, TypeError):
         return jsonify({"success": False, "error": "temperature invalide"}), 400
 
-    # NOTE: Writing to nanobot config is disabled to preserve file permissions
-    # Config changes must be made manually on the host
-    return jsonify(
-        {
-            "success": False,
-            "error": "Modification du fichier nanobot désactivée pour préserver les permissions. Veuillez modifier le fichier ~/.nanobot/config.json manuellement sur l'hôte.",
-        }
-    ), 403
+    try:
+        config = read_config()
+        config.setdefault("agents", {}).setdefault("defaults", {})
+
+        # Update only the provided fields to avoid breaking nanobot config
+        config["agents"]["defaults"]["model"] = model
+        # Save "custom" in file for Ollama (nanobot convention)
+        provider_to_save = "custom" if provider.lower() == "ollama" else provider
+        config["agents"]["defaults"]["provider"] = provider_to_save
+
+        # Only update maxTokens and temperature if they exist in current config
+        # This prevents breaking nanobot if these fields are not expected
+        current_defaults = config["agents"]["defaults"]
+
+        # Update maxTokens (preserve as number)
+        if "maxTokens" in current_defaults or max_tokens != 16384:
+            current_defaults["maxTokens"] = max_tokens
+
+        # Update temperature (preserve as number)
+        if "temperature" in current_defaults or temperature != 0.1:
+            current_defaults["temperature"] = temperature
+
+        write_config(config)
+        return jsonify(
+            {
+                "success": True,
+                "message": f"✅ Config mise à jour : {provider} / {model}",
+            }
+        )
+    except PermissionError as e:
+        return jsonify(
+            {
+                "success": False,
+                "error": f"Permission refusée: {str(e)}. Vérifiez les droits sur ~/.nanobot/config.json",
+            }
+        ), 403
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @app.route("/api/config/full")

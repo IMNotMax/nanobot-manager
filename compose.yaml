@@ -1,22 +1,39 @@
 services:
-# soit on garde le compose.yaml tel quu'il est, soit on intégre cela dans le compose.yaml de nanobot
-# l'avantage de l'intégrer dans le compose.yaml de nanobot, c'est que ça simplifie la gestion des réseaux et des volumes
-# et surtout on peut mettre en dépendances nanobot-manager et nanobot-gateway
-
+  # ============================================================================
+  # NANOBOT-MANAGER
+  # ============================================================================
+  # IMPORTANT: Configuration des permissions
+  # 
+  # Le container s'exécute avec les permissions de l'utilisateur courant (PUID/PGID)
+  # pour éviter les problèmes de permissions sur les fichiers partagés.
+  #
+  # Pour récupérer vos UID/GID automatiquement:
+  #   Sur Linux/Mac: id -u && id -g
+  #   Ou: echo "PUID=$(id -u)" >> .env && echo "PGID=$(id -g)" >> .env
+  #
+  # Pour l'utilisateur agent_smith sur Neo (192.168.2.202):
+  #   PUID=1001
+  #   PGID=1001
+  #
+  # Si non définis, utilise 1000:1000 par défaut
+  # ============================================================================
+  
   nanobot-manager:
-    build: ./nanobot-manager # mettre ./ ici si le compose.yaml est dans le même folder que le Dockerfile
+    build: ./nanobot-manager
     container_name: nanobot-manager
+    # Exécute le container avec les permissions de l'utilisateur courant
+    user: "${PUID:-1000}:${PGID:-1000}"
     ports:
       - "8899:8899"
     volumes:
-      # FICHIER NANOBOT EN LECTURE SEULE - Ne jamais modifier depuis le container
-      - ~/.nanobot/config.json:/root/.nanobot/config.json:ro
+      # Configuration nanobot (lecture/écriture avec permissions utilisateur)
+      - ~/.nanobot:/home/nanobot/.nanobot
       # SSH keys pour le mode Host
-      - ~/.ssh/nanobot-manager:/root/.ssh
-      # Configuration propre à nanobot-manager (lecture/écriture autorisée)
+      - ~/.ssh/nanobot-manager:/home/nanobot/.ssh
+      # Configuration propre à nanobot-manager
       - ./manager_data:/app/config
     environment:
-      - CONFIG_PATH=/root/.nanobot/config.json
+      - CONFIG_PATH=/home/nanobot/.nanobot/config.json
       - MANAGER_CONFIG_PATH=/app/config/manager.json
       - OLLAMA_URL=${OLLAMA_URL:-http://ollama:11434}
       - HTTP_PORT=${HTTP_PORT:-8899}
@@ -24,6 +41,7 @@ services:
       - HOST_SSH_USER=${HOST_SSH_USER}
       - HOST_SSH_HOST=${HOST_SSH_HOST}
       - HOST_SSH_PORT=${HOST_SSH_PORT:-22}
+      - HOME=/home/nanobot
     networks:
       - socket-proxy-network
     restart: unless-stopped
@@ -69,6 +87,7 @@ services:
       - /run
     networks:
       - socket-proxy-network
+      
 networks:
   socket-proxy-network:
     driver: bridge
