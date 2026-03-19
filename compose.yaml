@@ -16,6 +16,9 @@ services:
       - OLLAMA_URL=${OLLAMA_URL:-http://ollama:11434}
       - HTTP_PORT=${HTTP_PORT:-8899}
       - DOCKER_PROXY_URL=http://socket-proxy:2375
+      - HOST_SSH_USER=${HOST_SSH_USER}
+      - HOST_SSH_HOST=${HOST_SSH_HOST}
+      - HOST_SSH_PORT=${HOST_SSH_PORT:-22}
     networks:
       - socket-proxy-network
     restart: unless-stopped
