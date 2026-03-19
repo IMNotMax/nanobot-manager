@@ -67,54 +67,25 @@ def normalize_provider_name(provider_name):
 
 
 def read_config():
-    import sys
-
+    """Read nanobot config file. NEVER writes to this file to preserve permissions."""
     config_path = pathlib.Path(CONFIG_PATH)
-    print(f"DEBUG read_config: CONFIG_PATH = {CONFIG_PATH}", flush=True)
-    print(
-        f"DEBUG read_config: config_path.exists() = {config_path.exists()}", flush=True
-    )
-    print(
-        f"DEBUG read_config: config_path.absolute() = {config_path.absolute()}",
-        flush=True,
-    )
 
     if not config_path.exists():
-        print(f"DEBUG read_config: File not found, creating default", flush=True)
-        config_path.parent.mkdir(parents=True, exist_ok=True)
-        write_config(DEFAULT_CONFIG)
+        print(f"WARNING: Nanobot config not found at {CONFIG_PATH}", flush=True)
+        print(
+            f"WARNING: Using default config. Please ensure the file exists.", flush=True
+        )
         return DEFAULT_CONFIG.copy()
 
     try:
         with open(CONFIG_PATH, "r") as f:
-            content = f.read()
-            print(
-                f"DEBUG read_config: File content length = {len(content)}", flush=True
-            )
-            print(f"DEBUG read_config: First 500 chars = {content[:500]}", flush=True)
-            config = json.loads(content)
-            print(
-                f"DEBUG read_config: Parsed config keys = {list(config.keys())}",
-                flush=True,
-            )
-            return config
+            return json.load(f)
     except json.JSONDecodeError as e:
         print(f"ERROR: Corrupted config file at {CONFIG_PATH}: {e}", flush=True)
-        # Backup corrupted file
-        backup_path = config_path.with_suffix(".json.corrupted")
-        try:
-            config_path.rename(backup_path)
-            print(f"Backup created at {backup_path}", flush=True)
-        except Exception as backup_err:
-            print(f"Failed to backup: {backup_err}", flush=True)
-        # Create new default config
-        write_config(DEFAULT_CONFIG)
+        print(f"ERROR: Please fix the JSON syntax manually", flush=True)
         return DEFAULT_CONFIG.copy()
     except Exception as e:
         print(f"ERROR reading config: {e}", flush=True)
-        import traceback
-
-        traceback.print_exc()
         return DEFAULT_CONFIG.copy()
     try:
         with open(CONFIG_PATH, "r") as f:
@@ -137,8 +108,18 @@ def read_config():
 
 
 def write_config(config):
-    with open(CONFIG_PATH, "w") as f:
-        json.dump(config, f, indent=2)
+    """Write to nanobot config. WARNING: Should not be used as config is read-only."""
+    try:
+        with open(CONFIG_PATH, "w") as f:
+            json.dump(config, f, indent=2)
+    except PermissionError:
+        print(f"ERROR: Cannot write to {CONFIG_PATH} - file is read-only", flush=True)
+        raise PermissionError(
+            f"Cannot write to nanobot config. File is mounted read-only."
+        )
+    except Exception as e:
+        print(f"ERROR writing config: {e}", flush=True)
+        raise
 
 
 def read_manager_config():
@@ -399,37 +380,14 @@ def api_update():
     except (ValueError, TypeError):
         return jsonify({"success": False, "error": "temperature invalide"}), 400
 
-    try:
-        config = read_config()
-        config.setdefault("agents", {}).setdefault("defaults", {})
-
-        # Update only the provided fields to avoid breaking nanobot config
-        config["agents"]["defaults"]["model"] = model
-        # Save "custom" in file for Ollama (nanobot convention)
-        provider_to_save = "custom" if provider.lower() == "ollama" else provider
-        config["agents"]["defaults"]["provider"] = provider_to_save
-
-        # Only update maxTokens and temperature if they exist in current config
-        # This prevents breaking nanobot if these fields are not expected
-        current_defaults = config["agents"]["defaults"]
-
-        # Update maxTokens (preserve as number)
-        if "maxTokens" in current_defaults or max_tokens != 16384:
-            current_defaults["maxTokens"] = max_tokens
-
-        # Update temperature (preserve as number)
-        if "temperature" in current_defaults or temperature != 0.1:
-            current_defaults["temperature"] = temperature
-
-        write_config(config)
-        return jsonify(
-            {
-                "success": True,
-                "message": f"✅ Config mise à jour : {provider} / {model}",
-            }
-        )
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+    # NOTE: Writing to nanobot config is disabled to preserve file permissions
+    # Config changes must be made manually on the host
+    return jsonify(
+        {
+            "success": False,
+            "error": "Modification du fichier nanobot désactivée pour préserver les permissions. Veuillez modifier le fichier ~/.nanobot/config.json manuellement sur l'hôte.",
+        }
+    ), 403
 
 
 @app.route("/api/config/full")

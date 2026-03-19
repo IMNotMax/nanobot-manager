@@ -9,8 +9,11 @@ services:
     ports:
       - "8899:8899"
     volumes:
-      - ~/.nanobot:/root/.nanobot
+      # FICHIER NANOBOT EN LECTURE SEULE - Ne jamais modifier depuis le container
+      - ~/.nanobot/config.json:/root/.nanobot/config.json:ro
+      # SSH keys pour le mode Host
       - ~/.ssh/nanobot-manager:/root/.ssh
+      # Configuration propre à nanobot-manager (lecture/écriture autorisée)
       - ./manager_data:/app/config
     environment:
       - CONFIG_PATH=/root/.nanobot/config.json
@@ -24,6 +27,7 @@ services:
     networks:
       - socket-proxy-network
     restart: unless-stopped
+    
   socket-proxy:
     image: lscr.io/linuxserver/socket-proxy:latest
     container_name: socket-proxy
