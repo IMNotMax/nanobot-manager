@@ -1,0 +1,17 @@
+{
+  "agents": {
+    "defaults": {
+      "model": "qwen3.5:9b-16k",
+      "provider": "custom"
+    },
+    "coder": {
+      "model": "qwen3.5:9b-16k",
+      "provider": "custom",
+      "maxTokens": 16384
+    },
+    "vision": {
+      "model": "qwen3.5:9b-16k",
+      "provider": "custom"
+    }
+  }
+}

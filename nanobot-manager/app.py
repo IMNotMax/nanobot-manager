@@ -228,6 +228,66 @@ def api_update():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@app.route("/api/config/full")
+def api_config_full():
+    """Get full configuration including all agents settings."""
+    try:
+        config = read_config()
+        return jsonify(config)
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/config/advanced", methods=["POST"])
+def api_config_advanced():
+    """Update advanced configuration settings."""
+    data = request.json
+    workspace = data.get("workspace", "~/.nanobot/workspace").strip()
+    max_tool_iterations = data.get("maxToolIterations", 40)
+    memory_window = data.get("memoryWindow", 100)
+    reasoning_effort = data.get("reasoningEffort")
+    mcp_servers = data.get("mcpServers", [])
+
+    try:
+        max_tool_iterations = int(max_tool_iterations)
+        if max_tool_iterations <= 0 or max_tool_iterations > 100:
+            return jsonify(
+                {
+                    "success": False,
+                    "error": "maxToolIterations doit être entre 1 et 100",
+                }
+            ), 400
+    except (ValueError, TypeError):
+        return jsonify({"success": False, "error": "maxToolIterations invalide"}), 400
+
+    try:
+        memory_window = int(memory_window)
+        if memory_window < 10 or memory_window > 500:
+            return jsonify(
+                {"success": False, "error": "memoryWindow doit être entre 10 et 500"}
+            ), 400
+    except (ValueError, TypeError):
+        return jsonify({"success": False, "error": "memoryWindow invalide"}), 400
+
+    try:
+        config = read_config()
+        config.setdefault("agents", {}).setdefault("defaults", {})
+        config["agents"]["defaults"]["workspace"] = workspace
+        config["agents"]["defaults"]["maxToolIterations"] = max_tool_iterations
+        config["agents"]["defaults"]["memoryWindow"] = memory_window
+        if reasoning_effort:
+            config["agents"]["defaults"]["reasoningEffort"] = reasoning_effort
+        elif "reasoningEffort" in config["agents"]["defaults"]:
+            del config["agents"]["defaults"]["reasoningEffort"]
+        config["agents"]["defaults"]["mcpServers"] = mcp_servers
+        write_config(config)
+        return jsonify(
+            {"success": True, "message": "✅ Configuration avancée mise à jour"}
+        )
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @app.route("/api/coder")
 def api_coder():
     """Retrieve Coder configuration (model, provider, maxTokens)."""

@@ -458,6 +458,12 @@
                 <span id="cur-temperature">—</span>
             </div>
 
+            <!-- Mode Toggle -->
+            <div class="mode-toggle" style="margin-bottom: 1.5rem; text-align: center;">
+                <button class="btn btn-small" id="btn-quick-mode" onclick="setMode('quick')" style="background: #38bdf8; color: #0f172a;">⚡ Rapide</button>
+                <button class="btn btn-small" id="btn-advanced-mode" onclick="setMode('advanced')" style="background: #334155; color: #94a3b8; margin-left: 0.5rem;">🔧 Avancé</button>
+            </div>
+
             <!-- Provider Selection -->
             <div class="field">
                 <label>Provider <span class="required">*</span></label>
@@ -537,6 +543,44 @@
             </div>
 
             <button class="btn btn-primary" id="btn-save" onclick="saveConfig()">💾 Sauvegarder la configuration</button>
+
+            <!-- Advanced Mode Section -->
+            <div id="advanced-config" class="advanced-section" style="display: none; margin-top: 2rem; padding-top: 2rem; border-top: 2px dashed #334155;">
+                <h3 style="color: #38bdf8; margin-bottom: 1rem;">🔧 Mode Avancé</h3>
+                <p class="token-info" style="margin-bottom: 1.5rem;">Ces paramètres sont optionnels et permettent une configuration fine de l'agent.</p>
+
+                <div class="field">
+                    <label>Workspace</label>
+                    <input type="text" id="adv-workspace" placeholder="~/.nanobot/workspace" value="~/.nanobot/workspace">
+                </div>
+
+                <div class="field">
+                    <label>Max Tool Iterations</label>
+                    <input type="number" id="adv-max-tool-iterations" placeholder="40" value="40" min="1" max="100">
+                </div>
+
+                <div class="field">
+                    <label>Memory Window</label>
+                    <input type="number" id="adv-memory-window" placeholder="100" value="100" min="10" max="500">
+                </div>
+
+                <div class="field">
+                    <label>Reasoning Effort</label>
+                    <select id="adv-reasoning-effort">
+                        <option value="">Aucun (défaut)</option>
+                        <option value="low">Low (Rapide)</option>
+                        <option value="medium">Medium (Équilibré)</option>
+                        <option value="high">High (Précis)</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>MCP Servers (séparés par des virgules)</label>
+                    <input type="text" id="adv-mcp-servers" placeholder="homeassistant, filesystem, ...">
+                </div>
+
+                <button class="btn btn-primary" id="btn-save-advanced" onclick="saveAdvancedConfig()">💾 Sauvegarder paramètres avancés</button>
+            </div>
         </div>
 
         <!-- Coder Agent Tab -->
@@ -876,6 +920,86 @@
             } catch (e) {
                 console.error('Erreur chargement config:', e);
             }
+        }
+
+        // Mode toggle functions
+        let currentMode = 'quick';
+
+        function setMode(mode) {
+            currentMode = mode;
+            const quickBtn = document.getElementById('btn-quick-mode');
+            const advancedBtn = document.getElementById('btn-advanced-mode');
+            const advancedSection = document.getElementById('advanced-config');
+
+            if (mode === 'quick') {
+                quickBtn.style.background = '#38bdf8';
+                quickBtn.style.color = '#0f172a';
+                advancedBtn.style.background = '#334155';
+                advancedBtn.style.color = '#94a3b8';
+                advancedSection.style.display = 'none';
+            } else {
+                quickBtn.style.background = '#334155';
+                quickBtn.style.color = '#94a3b8';
+                advancedBtn.style.background = '#38bdf8';
+                advancedBtn.style.color = '#0f172a';
+                advancedSection.style.display = 'block';
+                loadAdvancedConfig();
+            }
+        }
+
+        async function loadAdvancedConfig() {
+            try {
+                const res = await fetch('/api/config/full');
+                const data = await res.json();
+                
+                if (data.agents && data.agents.defaults) {
+                    const defaults = data.agents.defaults;
+                    document.getElementById('adv-workspace').value = defaults.workspace || '~/.nanobot/workspace';
+                    document.getElementById('adv-max-tool-iterations').value = defaults.maxToolIterations || 40;
+                    document.getElementById('adv-memory-window').value = defaults.memoryWindow || 100;
+                    document.getElementById('adv-reasoning-effort').value = defaults.reasoningEffort || '';
+                    document.getElementById('adv-mcp-servers').value = defaults.mcpServers ? defaults.mcpServers.join(', ') : '';
+                }
+            } catch (e) {
+                console.error('Erreur chargement config avancée:', e);
+            }
+        }
+
+        async function saveAdvancedConfig() {
+            const btn = document.getElementById('btn-save-advanced');
+            const workspace = document.getElementById('adv-workspace').value.trim();
+            const maxToolIterations = parseInt(document.getElementById('adv-max-tool-iterations').value);
+            const memoryWindow = parseInt(document.getElementById('adv-memory-window').value);
+            const reasoningEffort = document.getElementById('adv-reasoning-effort').value;
+            const mcpServersStr = document.getElementById('adv-mcp-servers').value.trim();
+            const mcpServers = mcpServersStr ? mcpServersStr.split(',').map(s => s.trim()).filter(s => s) : [];
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Sauvegarde...';
+
+            try {
+                const res = await fetch('/api/config/advanced', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        workspace,
+                        maxToolIterations,
+                        memoryWindow,
+                        reasoningEffort,
+                        mcpServers
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                } else {
+                    showToast('Erreur : ' + data.error, 'error');
+                }
+            } catch (e) {
+                showToast('Erreur réseau', 'error');
+            }
+            btn.disabled = false;
+            btn.innerHTML = '💾 Sauvegarder paramètres avancés';
         }
 
         // ========== Default Config ==========
