@@ -27,13 +27,14 @@ services:
       - "8899:8899"
     volumes:
       # Configuration nanobot (lecture/écriture avec permissions utilisateur)
-      - ~/.nanobot:/home/nanobot/.nanobot
+      # On monte seulement le fichier pour éviter les problèmes de permissions sur le répertoire
+      - ~/.nanobot/config.json:/home/agent_smith/.nanobot/config.json
       # SSH keys pour le mode Host
-      - ~/.ssh/nanobot-manager:/home/nanobot/.ssh
+      - ~/.ssh/nanobot-manager:/home/agent_smith/.ssh
       # Configuration propre à nanobot-manager
       - ./manager_data:/app/config
     environment:
-      - CONFIG_PATH=/home/nanobot/.nanobot/config.json
+      - CONFIG_PATH=/home/agent_smith/.nanobot/config.json
       - MANAGER_CONFIG_PATH=/app/config/manager.json
       - OLLAMA_URL=${OLLAMA_URL:-http://ollama:11434}
       - HTTP_PORT=${HTTP_PORT:-8899}
@@ -41,7 +42,7 @@ services:
       - HOST_SSH_USER=${HOST_SSH_USER}
       - HOST_SSH_HOST=${HOST_SSH_HOST}
       - HOST_SSH_PORT=${HOST_SSH_PORT:-22}
-      - HOME=/home/nanobot
+      - HOME=/home/agent_smith
     networks:
       - socket-proxy-network
     restart: unless-stopped

@@ -6,11 +6,16 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends openssh-client && rm -rf /var/lib/apt/lists/*
 
 # Create nanobot user with UID/GID that will be mapped at runtime
-# Using 1000:1000 as default, will be overridden by docker-compose user: directive
+# Support both 1000:1000 (default) and 1001:1001 (agent_smith on Neo)
 RUN groupadd -g 1000 nanobot && \
     useradd -u 1000 -g nanobot -m -s /bin/bash nanobot && \
+    groupadd -g 1001 agent_smith && \
+    useradd -u 1001 -g agent_smith -m -s /bin/bash agent_smith && \
     mkdir -p /home/nanobot/.nanobot /home/nanobot/.ssh /app/config && \
-    chown -R nanobot:nanobot /home/nanobot /app
+    mkdir -p /home/agent_smith/.nanobot /home/agent_smith/.ssh && \
+    chown -R nanobot:nanobot /home/nanobot && \
+    chown -R agent_smith:agent_smith /home/agent_smith && \
+    chown -R nanobot:nanobot /app
 
 # Copy application files
 COPY requirements.txt .
