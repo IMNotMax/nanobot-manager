@@ -179,7 +179,8 @@ def get_ollama_models():
 
 def get_ssh_public_key() -> Union[str, None]:
     """Retrieve SSH public key if it exists."""
-    ssh_key_path = pathlib.Path("/root/.ssh/id_ed25519.pub")
+    ssh_dir = pathlib.Path(os.environ.get("HOME", "/home/app"), ".ssh")
+    ssh_key_path = ssh_dir / "id_ed25519.pub"
     if ssh_key_path.exists():
         try:
             return ssh_key_path.read_text().strip()
@@ -189,21 +190,28 @@ def get_ssh_public_key() -> Union[str, None]:
 
 
 def generate_ssh_key() -> Tuple[bool, str]:
-    """Generate SSH key pair."""
+    """Generate SSH key pair using the SSH directory from HOME or default."""
+    ssh_dir = pathlib.Path(os.environ.get("HOME", "/home/app"), ".ssh")
+    ssh_key_path = ssh_dir / "id_ed25519"
+
     try:
+        # Ensure .ssh directory exists
+        ssh_dir.mkdir(parents=True, exist_ok=True)
+
         result = subprocess.run(
             [
                 "ssh-keygen",
                 "-t",
                 "ed25519",
                 "-f",
-                "/root/.ssh/id_ed25519",
+                str(ssh_key_path),
                 "-N",
                 "",
             ],
             capture_output=True,
             text=True,
             timeout=10,
+            env={**os.environ, "HOME": str(ssh_dir)},
         )
         if result.returncode == 0:
             # Read and return the public key
