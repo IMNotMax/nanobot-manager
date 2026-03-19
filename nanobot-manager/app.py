@@ -18,6 +18,13 @@ HTTP_PORT = int(os.environ.get("HTTP_PORT", "8899"))
 HOST_SSH_USER = os.environ.get("HOST_SSH_USER", "")
 HOST_SSH_HOST = os.environ.get("HOST_SSH_HOST", "localhost")
 HOST_SSH_PORT = int(os.environ.get("HOST_SSH_PORT", "22"))
+DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
+
+
+def debug_log(*args, **kwargs):
+    """Log debug messages only if DEBUG is enabled."""
+    if DEBUG:
+        print(*args, **kwargs, flush=True)
 
 
 DEFAULT_CONFIG = {
@@ -316,14 +323,11 @@ def api_providers():
         config = read_config()
         providers_config = config.get("providers", {})
 
-        sys.stdout.flush()
-        print(f"DEBUG: providers_config = {providers_config}", flush=True)
-        print(f"DEBUG: providers_config type = {type(providers_config)}", flush=True)
-        print(
-            f"DEBUG: providers_config keys = {list(providers_config.keys()) if providers_config else 'EMPTY'}",
-            flush=True,
+        debug_log(f"DEBUG: providers_config = {providers_config}")
+        debug_log(f"DEBUG: providers_config type = {type(providers_config)}")
+        debug_log(
+            f"DEBUG: providers_config keys = {list(providers_config.keys()) if providers_config else 'EMPTY'}"
         )
-        sys.stdout.flush()
 
         providers_status = []
 
@@ -333,20 +337,17 @@ def api_providers():
             providers_status.append(
                 {"name": provider_name, "configured": is_configured}
             )
-            print(
-                f"DEBUG: Added provider {provider_name}, configured={is_configured}",
-                flush=True,
+            debug_log(
+                f"DEBUG: Added provider {provider_name}, configured={is_configured}"
             )
 
-        print(f"DEBUG: Returning {len(providers_status)} providers", flush=True)
-        sys.stdout.flush()
+        debug_log(f"DEBUG: Returning {len(providers_status)} providers")
         return jsonify({"providers": providers_status})
     except Exception as e:
         print(f"ERROR in api_providers: {e}", flush=True)
         import traceback
 
         traceback.print_exc()
-        sys.stdout.flush()
         return jsonify({"success": False, "error": str(e)}), 500
 
 
