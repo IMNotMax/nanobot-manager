@@ -670,6 +670,41 @@
 
         <!-- Settings Tab -->
         <div id="settings" class="tab-content">
+            <!-- Providers Configuration Section -->
+            <div class="settings-section">
+                <h3>🔌 Configuration des Providers</h3>
+                <p class="token-info" style="margin-bottom: 1rem;">Configurez les clés API et URLs pour chaque provider.</p>
+
+                <div class="field">
+                    <label>Provider à configurer</label>
+                    <select id="settings-provider-select" onchange="loadProviderConfig()">
+                        <option value="" disabled selected>Choisir un provider...</option>
+                    </select>
+                </div>
+
+                <div id="provider-config-form" style="display: none;">
+                    <div class="field">
+                        <label>Clé API (apiKey)</label>
+                        <input type="text" id="settings-api-key" placeholder="sk-...">
+                        <p class="token-info">Laissez vide pour supprimer la configuration</p>
+                    </div>
+
+                    <div class="field">
+                        <label>URL de base (apiBase) - Optionnel</label>
+                        <input type="text" id="settings-api-base" placeholder="https://api.example.com/v1">
+                        <p class="token-info">Pour Ollama: http://localhost:11434/v1 ou http://IP:11434/v1</p>
+                    </div>
+
+                    <div class="field">
+                        <label>Headers supplémentaires (extraHeaders) - Optionnel</label>
+                        <input type="text" id="settings-extra-headers" placeholder='{"Header-Name": "value"}'>
+                    </div>
+
+                    <button class="btn btn-primary" id="btn-save-provider" onclick="saveProviderConfig()">💾 Sauvegarder le provider</button>
+                    <button class="btn btn-danger" id="btn-delete-provider" onclick="deleteProviderConfig()" style="margin-left: 0.5rem;">🗑️ Supprimer</button>
+                </div>
+            </div>
+
             <!-- Execution Type Section -->
             <div class="settings-section">
                 <h3>🔄 Mode d'exécution</h3>
@@ -754,6 +789,7 @@
                 loadExecutionType();
                 loadSshKey();
                 loadLogs();
+                loadSettingsProviders();
             }
         }
 
@@ -936,24 +972,39 @@
                 
                 // Set provider
                 if (data.provider) {
-                    document.getElementById('provider').value = data.provider;
-                    onProviderChange();
+                    const providerSelect = document.getElementById('provider');
+                    providerSelect.value = data.provider;
+                    await onProviderChange();
                 }
                 
-                // Set model
+                // Set model after provider change has completed
                 if (data.model) {
                     const provider = data.provider;
-                    if (provider === 'custom') {
-                        // Try to find in dropdown
-                        const select = document.getElementById('model-select');
-                        const options = Array.from(select.options).map(o => o.value);
-                        if (options.includes(data.model)) {
-                            select.value = data.model;
+                    const ollamaContainer = document.getElementById('model-ollama-container');
+                    
+                    if (provider === 'ollama' || provider === 'custom') {
+                        // Check if we're showing dropdown or text input
+                        if (ollamaContainer.style.display !== 'none') {
+                            // Dropdown mode - try to select the model
+                            const select = document.getElementById('model-select');
+                            // Wait a bit for models to load
+                            setTimeout(() => {
+                                const options = Array.from(select.options).map(o => o.value);
+                                if (options.includes(data.model)) {
+                                    select.value = data.model;
+                                    manualMode = false;
+                                } else {
+                                    // Model not in list, switch to manual
+                                    switchToManual();
+                                    modelManual.value = data.model;
+                                }
+                            }, 500);
                         } else {
-                            switchToManual();
-                            modelManual.value = data.model;
+                            // Text input mode
+                            document.getElementById('model-text').value = data.model;
                         }
                     } else {
+                        // Other providers - use text input
                         document.getElementById('model-text').value = data.model;
                     }
                 }
@@ -1296,6 +1347,138 @@
             }
             btn.disabled = false;
             btn.innerHTML = '💾 Sauvegarder Vision';
+        }
+
+        // ========== Provider Configuration ==========
+        async function loadSettingsProviders() {
+            try {
+                const res = await fetch('/api/providers');
+                const data = await res.json();
+                const select = document.getElementById('settings-provider-select');
+                
+                // Keep placeholder
+                select.innerHTML = '<option value="" disabled selected>Choisir un provider...</option>';
+                
+                if (data.providers) {
+                    data.providers.forEach(p => {
+                        const option = document.createElement('option');
+                        option.value = p.name;
+                        option.textContent = p.name + (p.configured ? ' ✓' : ' (non configuré)');
+                        select.appendChild(option);
+                    });
+                }
+            } catch (e) {
+                console.error('Erreur chargement providers:', e);
+            }
+        }
+
+        async function loadProviderConfig() {
+            const provider = document.getElementById('settings-provider-select').value;
+            if (!provider) return;
+            
+            document.getElementById('provider-config-form').style.display = 'block';
+            
+            try {
+                const res = await fetch('/api/config/full');
+                const data = await res.json();
+                
+                if (data.providers && data.providers[provider]) {
+                    const config = data.providers[provider];
+                    document.getElementById('settings-api-key').value = config.apiKey || '';
+                    document.getElementById('settings-api-base').value = config.apiBase || '';
+                    document.getElementById('settings-extra-headers').value = config.extraHeaders ? JSON.stringify(config.extraHeaders) : '';
+                } else {
+                    // Clear fields if provider not configured
+                    document.getElementById('settings-api-key').value = '';
+                    document.getElementById('settings-api-base').value = '';
+                    document.getElementById('settings-extra-headers').value = '';
+                }
+            } catch (e) {
+                console.error('Erreur chargement config provider:', e);
+            }
+        }
+
+        async function saveProviderConfig() {
+            const btn = document.getElementById('btn-save-provider');
+            const provider = document.getElementById('settings-provider-select').value;
+            const apiKey = document.getElementById('settings-api-key').value;
+            const apiBase = document.getElementById('settings-api-base').value;
+            const extraHeadersStr = document.getElementById('settings-extra-headers').value;
+            
+            if (!provider) {
+                showToast('Veuillez sélectionner un provider', 'error');
+                return;
+            }
+            
+            let extraHeaders = null;
+            if (extraHeadersStr.trim()) {
+                try {
+                    extraHeaders = JSON.parse(extraHeadersStr);
+                } catch (e) {
+                    showToast('Format JSON invalide pour les headers', 'error');
+                    return;
+                }
+            }
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Sauvegarde...';
+            
+            try {
+                const res = await fetch('/api/provider/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        provider,
+                        apiKey,
+                        apiBase: apiBase || null,
+                        extraHeaders
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    // Refresh provider list
+                    await loadSettingsProviders();
+                    await loadProviders();
+                } else {
+                    showToast('Erreur : ' + data.error, 'error');
+                }
+            } catch (e) {
+                showToast('Erreur réseau', 'error');
+            }
+            btn.disabled = false;
+            btn.innerHTML = '💾 Sauvegarder le provider';
+        }
+
+        async function deleteProviderConfig() {
+            const provider = document.getElementById('settings-provider-select').value;
+            if (!provider) {
+                showToast('Veuillez sélectionner un provider', 'error');
+                return;
+            }
+            
+            if (!confirm(`Êtes-vous sûr de vouloir supprimer la configuration du provider "${provider}" ?`)) {
+                return;
+            }
+            
+            try {
+                const res = await fetch('/api/provider/config', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ provider })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    document.getElementById('provider-config-form').style.display = 'none';
+                    await loadSettingsProviders();
+                    await loadProviders();
+                } else {
+                    showToast('Erreur : ' + data.error, 'error');
+                }
+            } catch (e) {
+                showToast('Erreur réseau', 'error');
+            }
         }
 
         // ========== Execution Type Settings ==========

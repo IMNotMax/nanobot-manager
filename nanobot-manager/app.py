@@ -157,27 +157,26 @@ def generate_ssh_key() -> Tuple[bool, str]:
 
 
 def get_provider_status(config, provider_name):
-    """Check if a provider is configured based on nanobot rules.
+    """Check if a provider is properly configured.
 
-    Rule: apiKey must be a string (even empty string counts as configured in nanobot)
-    For Ollama: always considered available
+    For Ollama: always considered available (local)
+    For other providers: configured only if apiKey is a non-empty string
     """
     providers = config.get("providers", {})
 
     # Normalize provider name
     normalized_name = normalize_provider_name(provider_name)
 
-    # Handle Ollama - always available
+    # Handle Ollama - always available locally
     if normalized_name == "ollama":
         return True
 
-    # For other providers, check if provider exists in config
-    # In nanobot, if provider has any config (even empty apiKey), it's considered present
+    # For other providers, check if apiKey is a non-empty string
     if provider_name in providers:
         provider_config = providers[provider_name]
-        api_key = provider_config.get("apiKey")
-        # apiKey is configured if it's a string (even empty)
-        if isinstance(api_key, str):
+        api_key = provider_config.get("apiKey", "")
+        # Provider is configured only if apiKey is a non-empty string
+        if isinstance(api_key, str) and api_key.strip():
             return True
 
     return False
@@ -299,12 +298,25 @@ def api_update():
     try:
         config = read_config()
         config.setdefault("agents", {}).setdefault("defaults", {})
+
+        # Update only the provided fields to avoid breaking nanobot config
         config["agents"]["defaults"]["model"] = model
         # Save "custom" in file for Ollama (nanobot convention)
         provider_to_save = "custom" if provider.lower() == "ollama" else provider
         config["agents"]["defaults"]["provider"] = provider_to_save
-        config["agents"]["defaults"]["maxTokens"] = max_tokens
-        config["agents"]["defaults"]["temperature"] = temperature
+
+        # Only update maxTokens and temperature if they exist in current config
+        # This prevents breaking nanobot if these fields are not expected
+        current_defaults = config["agents"]["defaults"]
+
+        # Update maxTokens (preserve as number)
+        if "maxTokens" in current_defaults or max_tokens != 16384:
+            current_defaults["maxTokens"] = max_tokens
+
+        # Update temperature (preserve as number)
+        if "temperature" in current_defaults or temperature != 0.1:
+            current_defaults["temperature"] = temperature
+
         write_config(config)
         return jsonify(
             {
@@ -371,6 +383,78 @@ def api_config_advanced():
         write_config(config)
         return jsonify(
             {"success": True, "message": "✅ Configuration avancée mise à jour"}
+        )
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/provider/config", methods=["POST"])
+def api_provider_config():
+    """Configure a provider (apiKey, apiBase, extraHeaders)."""
+    data = request.json
+    provider = data.get("provider", "").strip()
+    api_key = data.get("apiKey", "")
+    api_base = data.get("apiBase")
+    extra_headers = data.get("extraHeaders")
+
+    if not provider:
+        return jsonify({"success": False, "error": "Provider requis"}), 400
+
+    try:
+        config = read_config()
+        config.setdefault("providers", {})
+
+        # If apiKey is empty, remove the provider config
+        if not api_key.strip():
+            if provider in config["providers"]:
+                del config["providers"][provider]
+                write_config(config)
+                return jsonify(
+                    {"success": True, "message": f"✅ Provider '{provider}' supprimé"}
+                )
+            else:
+                return jsonify(
+                    {"success": False, "error": f"Provider '{provider}' non trouvé"}
+                ), 404
+
+        # Update or create provider config
+        config["providers"][provider] = {"apiKey": api_key}
+
+        if api_base:
+            config["providers"][provider]["apiBase"] = api_base
+
+        if extra_headers:
+            config["providers"][provider]["extraHeaders"] = extra_headers
+
+        write_config(config)
+        return jsonify(
+            {"success": True, "message": f"✅ Provider '{provider}' configuré"}
+        )
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/api/provider/config", methods=["DELETE"])
+def api_provider_config_delete():
+    """Delete a provider configuration."""
+    data = request.json
+    provider = data.get("provider", "").strip()
+
+    if not provider:
+        return jsonify({"success": False, "error": "Provider requis"}), 400
+
+    try:
+        config = read_config()
+
+        if provider not in config.get("providers", {}):
+            return jsonify(
+                {"success": False, "error": f"Provider '{provider}' non trouvé"}
+            ), 404
+
+        del config["providers"][provider]
+        write_config(config)
+        return jsonify(
+            {"success": True, "message": f"✅ Provider '{provider}' supprimé"}
         )
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
