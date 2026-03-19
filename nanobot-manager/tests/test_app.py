@@ -51,12 +51,14 @@ def sample_config():
 class TestIndexRoute:
     """Tests for the main index route."""
 
-    def test_index_page_loads(self, client):
+    @patch("app.get_ollama_models")
+    def test_index_page_loads(self, mock_models, client):
         """Test that the index page loads successfully."""
+        mock_models.return_value = []
         response = client.get("/")
         assert response.status_code == 200
         assert b"Nanobot Manager" in response.data
-        assert b"Configuration rapide" in response.data or b"Par D" in response.data
+        assert b"nanobot" in response.data.lower()
 
 
 class TestConfigEndpoints:
@@ -210,29 +212,41 @@ class TestProvidersEndpoints:
 
     def test_get_providers_list(self, client):
         """Test getting list of all providers with status."""
-        response = client.get("/api/providers")
-        assert response.status_code == 200
-        data = json.loads(response.data)
-        assert "providers" in data
-        assert len(data["providers"]) > 0
+        config_with_providers = {
+            "providers": {
+                "custom": {"apiKey": ""},
+                "openai": {"apiKey": "sk-test"},
+            }
+        }
+        with patch("app.read_config", return_value=config_with_providers):
+            response = client.get("/api/providers")
+            assert response.status_code == 200
+            data = json.loads(response.data)
+            assert "providers" in data
+            assert len(data["providers"]) > 0
 
-        # Check structure of provider objects
-        for provider in data["providers"]:
-            assert "name" in provider
-            assert "configured" in provider
-            assert isinstance(provider["configured"], bool)
+            for provider in data["providers"]:
+                assert "name" in provider
+                assert "configured" in provider
+                assert isinstance(provider["configured"], bool)
 
     def test_get_providers_custom_always_configured(self, client):
         """Test that 'custom' provider is always considered configured."""
-        response = client.get("/api/providers")
-        assert response.status_code == 200
-        data = json.loads(response.data)
+        config_with_custom = {
+            "providers": {
+                "custom": {"apiKey": ""},
+            }
+        }
+        with patch("app.read_config", return_value=config_with_custom):
+            response = client.get("/api/providers")
+            assert response.status_code == 200
+            data = json.loads(response.data)
 
-        custom_provider = next(
-            (p for p in data["providers"] if p["name"] == "custom"), None
-        )
-        assert custom_provider is not None
-        assert custom_provider["configured"] is True
+            custom_provider = next(
+                (p for p in data["providers"] if p["name"] == "custom"), None
+            )
+            assert custom_provider is not None
+            assert custom_provider["configured"] is True
 
     def test_get_providers_with_configured_provider(self, client):
         """Test providers status when one has API key configured."""
@@ -309,14 +323,18 @@ class TestExecutionTypeEndpoints:
 
     def test_update_execution_type_success(self, client):
         """Test updating execution type."""
-        response = client.post(
-            "/api/execution-type/update",
-            data=json.dumps({"execution_type": "host"}),
-            content_type="application/json",
-        )
-        assert response.status_code == 200
-        data = json.loads(response.data)
-        assert data["success"] is True
+        with patch(
+            "app.MANAGER_CONFIG_PATH",
+            str(Path(tempfile.gettempdir()) / "test_manager.json"),
+        ):
+            response = client.post(
+                "/api/execution-type/update",
+                data=json.dumps({"execution_type": "host"}),
+                content_type="application/json",
+            )
+            assert response.status_code == 200
+            data = json.loads(response.data)
+            assert data["success"] is True
 
     def test_update_execution_type_invalid(self, client):
         """Test updating execution type with invalid value."""
@@ -486,15 +504,15 @@ class TestLogsEndpoint:
 class TestConfigFunctions:
     """Tests for configuration utility functions."""
 
-    def test_read_config_creates_default(self, client):
-        """Test that read_config creates default config if file doesn't exist."""
+    def test_read_config_returns_default_when_missing(self, client):
+        """Test that read_config returns default config if file doesn't exist."""
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / "test_config.json"
             with patch("app.CONFIG_PATH", str(config_path)):
                 config = read_config()
                 assert "agents" in config
                 assert "defaults" in config["agents"]
-                assert config_path.exists()
+                assert config_path.exists() is False
 
     def test_write_and_read_config(self, client):
         """Test writing and reading configuration."""

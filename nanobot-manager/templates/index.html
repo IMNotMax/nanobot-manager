@@ -350,6 +350,15 @@
             color: #fca5a5;
         }
 
+        .version-footer {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #334155;
+        }
+
         /* Quick Config Mode Styles */
         .required {
             color: #ef4444;
@@ -443,7 +452,7 @@
 
         <!-- Tab Navigation -->
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('defaults')">Par Défaut</button>
+            <button class="tab-btn active" onclick="switchTab('defaults')">⚡ Général</button>
             <button class="tab-btn" onclick="switchTab('coder')">🔧 Coder</button>
             <button class="tab-btn" onclick="switchTab('vision')">👁️ Vision</button>
             <button class="tab-btn" onclick="switchTab('settings')">⚙️ Paramètres</button>
@@ -592,17 +601,21 @@
 
             <div class="field">
                 <label>Provider</label>
-                <select id="coder-provider">
-                    <option value="custom">custom (Ollama local)</option>
-                    <option value="openai">openai</option>
-                    <option value="anthropic">anthropic</option>
-                    <option value="openrouter">openrouter</option>
+                <select id="coder-provider" onchange="onCoderProviderChange()">
+                    <option value="" disabled selected>Choisir un provider...</option>
                 </select>
             </div>
 
             <div class="field">
-                <label>Modèle</label>
-                <input type="text" id="coder-model" placeholder="ex: qwen3.5:9b-16k">
+                <label>Modèle LLM</label>
+                <div id="coder-model-ollama-container" class="model-row" style="display: none;">
+                    <select id="coder-model-select">
+                        <option value="" disabled selected>Choisir un modèle Ollama...</option>
+                    </select>
+                    <input type="text" id="coder-model-manual" placeholder="ex: qwen3.5:9b-16k" style="display: none;">
+                    <button class="toggle-btn" id="coder-toggle-mode" onclick="toggleCoderManual()">Manuel</button>
+                </div>
+                <input type="text" id="coder-model-text" placeholder="ex: gpt-4o, claude-3-opus..." style="display: none;">
             </div>
 
             <div class="field">
@@ -635,12 +648,42 @@
 
             <div class="field">
                 <label>Provider</label>
-                <select id="vision-provider">
-                    <option value="custom">custom (Ollama local)</option>
-                    <option value="openai">openai</option>
-                    <option value="anthropic">anthropic</option>
-                    <option value="openrouter">openrouter</option>
+                <select id="vision-provider" onchange="onVisionProviderChange()">
+                    <option value="" disabled selected>Choisir un provider...</option>
                 </select>
+            </div>
+
+            <div class="field">
+                <label>Modèle LLM</label>
+                <div id="vision-model-ollama-container" class="model-row" style="display: none;">
+                    <select id="vision-model-select">
+                        <option value="" disabled selected>Choisir un modèle Ollama...</option>
+                    </select>
+                    <input type="text" id="vision-model-manual" placeholder="ex: llava" style="display: none;">
+                    <button class="toggle-btn" id="vision-toggle-mode" onclick="toggleVisionManual()">Manuel</button>
+                </div>
+                <input type="text" id="vision-model-text" placeholder="ex: gpt-4-vision-preview..." style="display: none;">
+            </div>
+
+            <div class="field">
+                <label>Contexte (maxTokens) - Optionnel</label>
+                <div class="token-row">
+                    <select id="vision-tokens">
+                        <option value="">Aucun (par défaut du modèle)</option>
+                        <option value="2048">2K (Rapide)</option>
+                        <option value="4096">4K (Standard)</option>
+                        <option value="8192">8K (Détaillé)</option>
+                        <option value="16384">16K (Très détaillé)</option>
+                        <option value="32768">32K (Analyse complète)</option>
+                        <option value="__manual__">✏️ Personnalisé...</option>
+                    </select>
+                </div>
+                <input type="number" id="vision-tokens-manual" min="512" step="512" style="display: none; margin-top: 0.5rem;" placeholder="Saisir une valeur personnalisée">
+                <p class="token-info">Pour l'analyse d'images et vision par ordinateur. Optionnel si non supporté.</p>
+            </div>
+
+            <button class="btn btn-primary" id="btn-vision-save" onclick="saveVisionConfig()">💾 Sauvegarder Vision</button>
+        </div>
             </div>
 
             <div class="field">
@@ -769,6 +812,8 @@
         <button class="btn btn-danger" id="btn-restart" onclick="restartContainer()">🔄 Redémarrer Nanobot</button>
 
         <div id="toast" class="toast"></div>
+        
+        <div class="version-footer">nanobot-manager v0.9</div>
     </div>
 
     <script>
@@ -1260,12 +1305,128 @@
         }
 
         // ========== Coder Config ==========
+        let coderManualMode = false;
+
+        async function loadCoderProviders() {
+            try {
+                const res = await fetch('/api/providers');
+                const data = await res.json();
+                const select = document.getElementById('coder-provider');
+                select.innerHTML = '<option value="" disabled selected>Choisir un provider...</option>';
+                
+                if (data.providers) {
+                    data.providers.forEach(p => {
+                        const option = document.createElement('option');
+                        option.value = p.name;
+                        option.textContent = p.name + (p.configured ? '' : ' (non configuré)');
+                        option.disabled = !p.configured;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (e) {
+                console.error('Erreur chargement providers Coder:', e);
+            }
+        }
+
+        async function onCoderProviderChange() {
+            const provider = document.getElementById('coder-provider').value;
+            const ollamaContainer = document.getElementById('coder-model-ollama-container');
+            const textInput = document.getElementById('coder-model-text');
+            
+            if (provider === 'ollama' || provider === 'custom') {
+                ollamaContainer.style.display = 'flex';
+                textInput.style.display = 'none';
+                await loadCoderOllamaModels();
+            } else {
+                ollamaContainer.style.display = 'none';
+                textInput.style.display = 'block';
+                textInput.placeholder = `ex: modèle ${provider}`;
+            }
+        }
+
+        async function loadCoderOllamaModels() {
+            try {
+                const res = await fetch('/api/models');
+                const models = await res.json();
+                const select = document.getElementById('coder-model-select');
+                select.innerHTML = `
+                    <option value="" disabled selected>Choisir un modèle Ollama...</option>
+                    <option value="__manual__">✏️ Saisir manuellement...</option>
+                `;
+                models.forEach(m => {
+                    const option = document.createElement('option');
+                    option.value = m;
+                    option.textContent = m;
+                    select.appendChild(option);
+                });
+            } catch (e) {
+                console.error('Erreur chargement modèles Ollama:', e);
+            }
+        }
+
+        function toggleCoderManual() {
+            const select = document.getElementById('coder-model-select');
+            const manual = document.getElementById('coder-model-manual');
+            const btn = document.getElementById('coder-toggle-mode');
+            
+            if (coderManualMode) {
+                coderManualMode = false;
+                select.style.display = 'block';
+                manual.style.display = 'none';
+                btn.textContent = 'Manuel';
+            } else {
+                coderManualMode = true;
+                select.style.display = 'none';
+                manual.style.display = 'block';
+                btn.textContent = 'Liste';
+                manual.focus();
+            }
+        }
+
+        function getCoderModel() {
+            const provider = document.getElementById('coder-provider').value;
+            const ollamaContainer = document.getElementById('coder-model-ollama-container');
+            
+            if ((provider === 'ollama' || provider === 'custom') && ollamaContainer.style.display !== 'none') {
+                return coderManualMode 
+                    ? document.getElementById('coder-model-manual').value.trim()
+                    : document.getElementById('coder-model-select').value;
+            } else {
+                return document.getElementById('coder-model-text').value.trim();
+            }
+        }
+
         async function loadCoderConfig() {
+            await loadCoderProviders();
             try {
                 const res = await fetch('/api/coder');
                 const data = await res.json();
-                document.getElementById('coder-provider').value = data.provider || 'custom';
-                document.getElementById('coder-model').value = data.model || '';
+                document.getElementById('coder-provider').value = data.provider || '';
+                await onCoderProviderChange();
+                
+                const model = data.model || '';
+                if (model) {
+                    const provider = data.provider;
+                    const ollamaContainer = document.getElementById('coder-model-ollama-container');
+                    
+                    if (provider === 'ollama' || provider === 'custom') {
+                        if (ollamaContainer.style.display !== 'none') {
+                            const select = document.getElementById('coder-model-select');
+                            const options = Array.from(select.options).map(o => o.value);
+                            if (options.includes(model)) {
+                                select.value = model;
+                            } else {
+                                toggleCoderManual();
+                                document.getElementById('coder-model-manual').value = model;
+                            }
+                        } else {
+                            document.getElementById('coder-model-text').value = model;
+                        }
+                    } else {
+                        document.getElementById('coder-model-text').value = model;
+                    }
+                }
+                
                 document.getElementById('coder-tokens').value = data.maxTokens || 16384;
                 document.getElementById('coder-cur-provider').textContent = data.provider || '—';
                 document.getElementById('coder-cur-model').textContent = data.model || '—';
@@ -1276,7 +1437,7 @@
 
         async function saveCoderConfig() {
             const btn = document.getElementById('btn-coder-save');
-            const model = document.getElementById('coder-model').value.trim();
+            const model = getCoderModel();
             const provider = document.getElementById('coder-provider').value;
             const maxTokens = getTokenValue('coder-tokens', 'coder-tokens-manual');
 
@@ -1307,12 +1468,128 @@
         }
 
         // ========== Vision Config ==========
+        let visionManualMode = false;
+
+        async function loadVisionProviders() {
+            try {
+                const res = await fetch('/api/providers');
+                const data = await res.json();
+                const select = document.getElementById('vision-provider');
+                select.innerHTML = '<option value="" disabled selected>Choisir un provider...</option>';
+                
+                if (data.providers) {
+                    data.providers.forEach(p => {
+                        const option = document.createElement('option');
+                        option.value = p.name;
+                        option.textContent = p.name + (p.configured ? '' : ' (non configuré)');
+                        option.disabled = !p.configured;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (e) {
+                console.error('Erreur chargement providers Vision:', e);
+            }
+        }
+
+        async function onVisionProviderChange() {
+            const provider = document.getElementById('vision-provider').value;
+            const ollamaContainer = document.getElementById('vision-model-ollama-container');
+            const textInput = document.getElementById('vision-model-text');
+            
+            if (provider === 'ollama' || provider === 'custom') {
+                ollamaContainer.style.display = 'flex';
+                textInput.style.display = 'none';
+                await loadVisionOllamaModels();
+            } else {
+                ollamaContainer.style.display = 'none';
+                textInput.style.display = 'block';
+                textInput.placeholder = `ex: modèle ${provider}`;
+            }
+        }
+
+        async function loadVisionOllamaModels() {
+            try {
+                const res = await fetch('/api/models');
+                const models = await res.json();
+                const select = document.getElementById('vision-model-select');
+                select.innerHTML = `
+                    <option value="" disabled selected>Choisir un modèle Ollama...</option>
+                    <option value="__manual__">✏️ Saisir manuellement...</option>
+                `;
+                models.forEach(m => {
+                    const option = document.createElement('option');
+                    option.value = m;
+                    option.textContent = m;
+                    select.appendChild(option);
+                });
+            } catch (e) {
+                console.error('Erreur chargement modèles Ollama:', e);
+            }
+        }
+
+        function toggleVisionManual() {
+            const select = document.getElementById('vision-model-select');
+            const manual = document.getElementById('vision-model-manual');
+            const btn = document.getElementById('vision-toggle-mode');
+            
+            if (visionManualMode) {
+                visionManualMode = false;
+                select.style.display = 'block';
+                manual.style.display = 'none';
+                btn.textContent = 'Manuel';
+            } else {
+                visionManualMode = true;
+                select.style.display = 'none';
+                manual.style.display = 'block';
+                btn.textContent = 'Liste';
+                manual.focus();
+            }
+        }
+
+        function getVisionModel() {
+            const provider = document.getElementById('vision-provider').value;
+            const ollamaContainer = document.getElementById('vision-model-ollama-container');
+            
+            if ((provider === 'ollama' || provider === 'custom') && ollamaContainer.style.display !== 'none') {
+                return visionManualMode 
+                    ? document.getElementById('vision-model-manual').value.trim()
+                    : document.getElementById('vision-model-select').value;
+            } else {
+                return document.getElementById('vision-model-text').value.trim();
+            }
+        }
+
         async function loadVisionConfig() {
+            await loadVisionProviders();
             try {
                 const res = await fetch('/api/vision');
                 const data = await res.json();
-                document.getElementById('vision-provider').value = data.provider || 'custom';
-                document.getElementById('vision-model').value = data.model || '';
+                document.getElementById('vision-provider').value = data.provider || '';
+                await onVisionProviderChange();
+                
+                const model = data.model || '';
+                if (model) {
+                    const provider = data.provider;
+                    const ollamaContainer = document.getElementById('vision-model-ollama-container');
+                    
+                    if (provider === 'ollama' || provider === 'custom') {
+                        if (ollamaContainer.style.display !== 'none') {
+                            const select = document.getElementById('vision-model-select');
+                            const options = Array.from(select.options).map(o => o.value);
+                            if (options.includes(model)) {
+                                select.value = model;
+                            } else {
+                                toggleVisionManual();
+                                document.getElementById('vision-model-manual').value = model;
+                            }
+                        } else {
+                            document.getElementById('vision-model-text').value = model;
+                        }
+                    } else {
+                        document.getElementById('vision-model-text').value = model;
+                    }
+                }
+                
                 if (data.maxTokens) {
                     document.getElementById('vision-tokens').value = data.maxTokens;
                 } else {
@@ -1327,7 +1604,7 @@
 
         async function saveVisionConfig() {
             const btn = document.getElementById('btn-vision-save');
-            const model = document.getElementById('vision-model').value.trim();
+            const model = getVisionModel();
             const provider = document.getElementById('vision-provider').value;
             const maxTokens = getTokenValue('vision-tokens', 'vision-tokens-manual');
 
