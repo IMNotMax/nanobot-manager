@@ -11,8 +11,10 @@ services:
     volumes:
       - ~/.nanobot:/root/.nanobot
       - ~/.ssh/nanobot-manager:/root/.ssh
+      - ./manager_data:/app/config
     environment:
       - CONFIG_PATH=/root/.nanobot/config.json
+      - MANAGER_CONFIG_PATH=/app/config/manager.json
       - OLLAMA_URL=${OLLAMA_URL:-http://ollama:11434}
       - HTTP_PORT=${HTTP_PORT:-8899}
       - DOCKER_PROXY_URL=http://socket-proxy:2375

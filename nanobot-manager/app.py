@@ -9,6 +9,7 @@ import pathlib
 app = Flask(__name__)
 
 CONFIG_PATH = os.environ.get("CONFIG_PATH", "/app/config/config.json")
+MANAGER_CONFIG_PATH = os.environ.get("MANAGER_CONFIG_PATH", "/app/config/manager.json")
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://ollama:11434")
 DOCKER_PROXY_URL = os.environ.get(
     "DOCKER_PROXY_URL", "http://socket-proxy-nbt-mngr:2375"
@@ -77,6 +78,27 @@ def read_config():
 
 def write_config(config):
     with open(CONFIG_PATH, "w") as f:
+        json.dump(config, f, indent=2)
+
+
+def read_manager_config():
+    """Read nanobot-manager specific configuration (separate from nanobot config)."""
+    config_path = pathlib.Path(MANAGER_CONFIG_PATH)
+    if not config_path.exists():
+        # Return default config
+        return {"execution_type": "docker"}
+    try:
+        with open(MANAGER_CONFIG_PATH, "r") as f:
+            return json.load(f)
+    except Exception:
+        return {"execution_type": "docker"}
+
+
+def write_manager_config(config):
+    """Write nanobot-manager specific configuration."""
+    config_path = pathlib.Path(MANAGER_CONFIG_PATH)
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(MANAGER_CONFIG_PATH, "w") as f:
         json.dump(config, f, indent=2)
 
 
@@ -574,12 +596,10 @@ def api_vision_update():
 
 @app.route("/api/execution-type")
 def api_execution_type():
-    """Retrieve execution type (docker or host)."""
+    """Retrieve execution type (docker or host) from manager config."""
     try:
-        config = read_config()
-        execution_type = config.get("nanobot-manager", {}).get(
-            "execution_type", "docker"
-        )
+        config = read_manager_config()
+        execution_type = config.get("execution_type", "docker")
         return jsonify({"execution_type": execution_type})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -587,7 +607,7 @@ def api_execution_type():
 
 @app.route("/api/execution-type/update", methods=["POST"])
 def api_execution_type_update():
-    """Update execution type (docker or host)."""
+    """Update execution type (docker or host) in manager config."""
     data = request.json
     execution_type = data.get("execution_type", "").strip().lower()
 
@@ -597,10 +617,9 @@ def api_execution_type_update():
         ), 400
 
     try:
-        config = read_config()
-        config.setdefault("nanobot-manager", {})
-        config["nanobot-manager"]["execution_type"] = execution_type
-        write_config(config)
+        config = read_manager_config()
+        config["execution_type"] = execution_type
+        write_manager_config(config)
         return jsonify(
             {
                 "success": True,
@@ -614,10 +633,8 @@ def api_execution_type_update():
 @app.route("/api/restart", methods=["POST"])
 def api_restart():
     try:
-        config = read_config()
-        execution_type = config.get("nanobot-manager", {}).get(
-            "execution_type", "docker"
-        )
+        config = read_manager_config()
+        execution_type = config.get("execution_type", "docker")
 
         if execution_type == "host":
             # Restart using SSH + systemctl on host
@@ -729,10 +746,8 @@ def api_ssh_key_generate():
 def api_logs():
     """Retrieve nanobot-gateway logs based on execution type."""
     try:
-        config = read_config()
-        execution_type = config.get("nanobot-manager", {}).get(
-            "execution_type", "docker"
-        )
+        config = read_manager_config()
+        execution_type = config.get("execution_type", "docker")
 
         if execution_type == "host":
             # Get logs from host via SSH + journalctl
