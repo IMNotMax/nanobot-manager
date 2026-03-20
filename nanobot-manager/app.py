@@ -181,10 +181,12 @@ def get_ollama_models():
     return []
 
 
+SSH_DIR = pathlib.Path(os.environ.get("SSH_DIR", "/app/ssh"))
+
+
 def get_ssh_public_key() -> Union[str, None]:
     """Retrieve SSH public key if it exists."""
-    ssh_dir = pathlib.Path(os.environ.get("HOME", "/home/app"), ".ssh")
-    ssh_key_path = ssh_dir / "id_ed25519.pub"
+    ssh_key_path = SSH_DIR / "id_ed25519.pub"
     if ssh_key_path.exists():
         try:
             return ssh_key_path.read_text().strip()
@@ -195,18 +197,15 @@ def get_ssh_public_key() -> Union[str, None]:
 
 def get_ssh_key_path() -> str:
     """Get the SSH private key path."""
-    ssh_dir = pathlib.Path(os.environ.get("HOME", "/home/app"), ".ssh")
-    return str(ssh_dir / "id_ed25519")
+    return str(SSH_DIR / "id_ed25519")
 
 
 def generate_ssh_key() -> Tuple[bool, str]:
-    """Generate SSH key pair using the SSH directory from HOME or default."""
-    ssh_dir = pathlib.Path(os.environ.get("HOME", "/home/app"), ".ssh")
-    ssh_key_path = ssh_dir / "id_ed25519"
+    """Generate SSH key pair in /app/ssh directory."""
+    ssh_key_path = SSH_DIR / "id_ed25519"
 
     try:
-        # Ensure .ssh directory exists
-        ssh_dir.mkdir(parents=True, exist_ok=True)
+        SSH_DIR.mkdir(parents=True, exist_ok=True)
 
         result = subprocess.run(
             [
@@ -221,14 +220,18 @@ def generate_ssh_key() -> Tuple[bool, str]:
             capture_output=True,
             text=True,
             timeout=10,
-            env={**os.environ, "HOME": str(ssh_dir)},
         )
         if result.returncode == 0:
-            # Read and return the public key
             public_key = get_ssh_public_key()
-            return (True, public_key or "")
+            if public_key:
+                return (True, public_key)
+            return (
+                False,
+                "Clé générée mais impossible de lire la clé publique. Vérifiez les permissions.",
+            )
         else:
-            return (False, f"ssh-keygen error: {result.stderr}")
+            error_msg = result.stderr.strip() or result.stdout.strip()
+            return (False, f"ssh-keygen error: {error_msg or 'erreur inconnue'}")
     except subprocess.TimeoutExpired:
         return (False, "ssh-keygen timeout")
     except FileNotFoundError:
@@ -864,10 +867,26 @@ def api_logs():
                         {"success": True, "logs": result.stdout, "source": "host"}
                     )
                 else:
+                    stderr = result.stderr
+                    if "Permission denied" in stderr and "Load key" in stderr:
+                        error_msg = (
+                            "Impossible de lire la clé SSH. "
+                            "Vérifiez que ~/.ssh/nanobot-manager/id_ed25519 a les bonnes permissions (600). "
+                            "Si le fichier a été créé par root, exécutez: "
+                            "chown -R $PUID:$PGID ~/.ssh/nanobot-manager && chmod 600 ~/.ssh/nanobot-manager/id_ed25519"
+                        )
+                    elif "Permission denied" in stderr:
+                        error_msg = (
+                            "Authentification SSH refusée. "
+                            "Vérifiez que la clé publique est dans ~/.ssh/authorized_keys sur l'hôte "
+                            "pour l'utilisateur agent_smith."
+                        )
+                    else:
+                        error_msg = f"SSH error: {stderr[:500]}"
                     return jsonify(
                         {
                             "success": False,
-                            "error": f"SSH error: {result.stderr}",
+                            "error": error_msg,
                             "logs": "",
                             "source": "host",
                         }

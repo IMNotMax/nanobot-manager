@@ -11,10 +11,10 @@ RUN groupadd -g 1000 app 2>/dev/null || true && \
     groupadd -g 1001 agent_smith 2>/dev/null || true && \
     useradd -u 1000 -g app -m -s /bin/bash app 2>/dev/null || true && \
     useradd -u 1001 -g agent_smith -m -s /bin/bash agent_smith 2>/dev/null || true && \
-    mkdir -p /home/app/.nanobot /home/app/.ssh /home/agent_smith/.ssh /app/config && \
+    mkdir -p /home/app/.nanobot /home/agent_smith/.ssh /app/config /app/ssh && \
     chmod 755 /home/app /home/agent_smith && \
-    chmod 755 /home/app/.nanobot /home/app/.ssh /home/agent_smith/.ssh && \
-    chmod 755 /app/config && \
+    chmod 755 /home/app/.nanobot /home/agent_smith/.ssh /app/config && \
+    chmod 777 /app/ssh && \
     chown -R app:app /home/app /app && \
     chown -R agent_smith:agent_smith /home/agent_smith
 

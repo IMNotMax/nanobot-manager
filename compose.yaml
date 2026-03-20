@@ -26,8 +26,8 @@ services:
     volumes:
       # Configuration nanobot - le fichier sera accessible avec les permissions de l'utilisateur
       - ~/.nanobot/config.json:/home/app/.nanobot/config.json
-      # SSH keys pour le mode Host
-      - ~/.ssh/nanobot-manager:/home/app/.ssh
+      # SSH keys pour le mode Host (accessible regardless of which user runs the container)
+      - ~/.ssh/nanobot-manager:/app/ssh
       # Configuration propre à nanobot-manager (lecture/écriture)
       - ./manager_data:/app/config
     environment:
@@ -39,7 +39,6 @@ services:
       - HOST_SSH_USER=${HOST_SSH_USER}
       - HOST_SSH_HOST=${HOST_SSH_HOST}
       - HOST_SSH_PORT=${HOST_SSH_PORT:-22}
-      - HOME=/home/app
     networks:
       - socket-proxy-network
     restart: unless-stopped
