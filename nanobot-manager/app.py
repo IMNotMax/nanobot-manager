@@ -214,9 +214,16 @@ def get_ssh_key_path() -> str:
 def generate_ssh_key() -> Tuple[bool, str]:
     """Generate SSH key pair in /app/ssh directory."""
     ssh_key_path = SSH_DIR / "id_ed25519"
+    ssh_pub_key_path = SSH_DIR / "id_ed25519.pub"
 
     try:
         SSH_DIR.mkdir(parents=True, exist_ok=True)
+
+        # Remove existing keys to allow regeneration
+        if ssh_key_path.exists():
+            ssh_key_path.unlink()
+        if ssh_pub_key_path.exists():
+            ssh_pub_key_path.unlink()
 
         result = subprocess.run(
             [
