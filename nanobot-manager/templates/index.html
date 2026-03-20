@@ -461,7 +461,8 @@
         <!-- Default Agent Tab - Configuration Rapide -->
         <div id="defaults" class="tab-content active">
             <div class="current-badge">
-                Config actuelle — Provider : <span id="cur-provider">{{ current_provider }}</span> &nbsp;|&nbsp; Modèle :
+                Config actuelle — Provider : <span id="cur-provider">{{ current_provider }}</span> &nbsp;|&nbsp; Modèle
+                :
                 <span id="cur-model">{{ current_model }}</span> &nbsp;|&nbsp; Contexte :
                 <span id="cur-maxtokens">—</span> &nbsp;|&nbsp; Température :
                 <span id="cur-temperature">—</span>
@@ -469,8 +470,10 @@
 
             <!-- Mode Toggle -->
             <div class="mode-toggle" style="margin-bottom: 1.5rem; text-align: center;">
-                <button class="btn btn-small" id="btn-quick-mode" onclick="setMode('quick')" style="background: #38bdf8; color: #0f172a;">⚡ Rapide</button>
-                <button class="btn btn-small" id="btn-advanced-mode" onclick="setMode('advanced')" style="background: #334155; color: #94a3b8; margin-left: 0.5rem;">🔧 Avancé</button>
+                <button class="btn btn-small" id="btn-quick-mode" onclick="setMode('quick')"
+                    style="background: #38bdf8; color: #0f172a;">⚡ Rapide</button>
+                <button class="btn btn-small" id="btn-advanced-mode" onclick="setMode('advanced')"
+                    style="background: #334155; color: #94a3b8; margin-left: 0.5rem;">🔧 Avancé</button>
             </div>
 
             <!-- Provider Selection -->
@@ -481,7 +484,8 @@
                 </select>
                 <div id="provider-warning" class="warning-box" style="display: none;">
                     <span class="warning-icon">⚠️</span>
-                    <span class="warning-text">Ce provider n'est pas configuré. Veuillez d'abord configurer la clé API dans l'onglet "🔌 Providers".</span>
+                    <span class="warning-text">Ce provider n'est pas configuré. Veuillez d'abord configurer la clé API
+                        dans l'onglet "🔌 Providers".</span>
                 </div>
             </div>
 
@@ -506,7 +510,8 @@
             <div class="field">
                 <label>Taille de contexte (maxTokens)</label>
                 <div class="slider-container">
-                    <input type="range" id="maxtokens-slider" min="0" max="6" value="3" step="1" oninput="updateMaxTokensLabel()">
+                    <input type="range" id="maxtokens-slider" min="0" max="6" value="3" step="1"
+                        oninput="updateMaxTokensLabel()">
                     <div class="slider-labels">
                         <span>2K</span>
                         <span>4K</span>
@@ -524,7 +529,8 @@
             <div class="field">
                 <label>Température (créativité)</label>
                 <div class="slider-container">
-                    <input type="range" id="temperature-slider" min="0" max="20" value="1" step="1" oninput="updateTemperatureLabel()">
+                    <input type="range" id="temperature-slider" min="0" max="20" value="1" step="1"
+                        oninput="updateTemperatureLabel()">
                     <div class="slider-labels">
                         <span>Précis (0)</span>
                         <span></span>
@@ -551,16 +557,20 @@
                 </div>
             </div>
 
-            <button class="btn btn-primary" id="btn-save" onclick="saveConfig()">💾 Sauvegarder la configuration</button>
+            <button class="btn btn-primary" id="btn-save" onclick="saveConfig()">💾 Sauvegarder la
+                configuration</button>
 
             <!-- Advanced Mode Section -->
-            <div id="advanced-config" class="advanced-section" style="display: none; margin-top: 2rem; padding-top: 2rem; border-top: 2px dashed #334155;">
+            <div id="advanced-config" class="advanced-section"
+                style="display: none; margin-top: 2rem; padding-top: 2rem; border-top: 2px dashed #334155;">
                 <h3 style="color: #38bdf8; margin-bottom: 1rem;">🔧 Mode Avancé</h3>
-                <p class="token-info" style="margin-bottom: 1.5rem;">Ces paramètres sont optionnels et permettent une configuration fine de l'agent.</p>
+                <p class="token-info" style="margin-bottom: 1.5rem;">Ces paramètres sont optionnels et permettent une
+                    configuration fine de l'agent.</p>
 
                 <div class="field">
                     <label>Workspace</label>
-                    <input type="text" id="adv-workspace" placeholder="~/.nanobot/workspace" value="~/.nanobot/workspace">
+                    <input type="text" id="adv-workspace" placeholder="~/.nanobot/workspace"
+                        value="~/.nanobot/workspace">
                 </div>
 
                 <div class="field">
@@ -588,7 +598,8 @@
                     <input type="text" id="adv-mcp-servers" placeholder="homeassistant, filesystem, ...">
                 </div>
 
-                <button class="btn btn-primary" id="btn-save-advanced" onclick="saveAdvancedConfig()">💾 Sauvegarder paramètres avancés</button>
+                <button class="btn btn-primary" id="btn-save-advanced" onclick="saveAdvancedConfig()">💾 Sauvegarder
+                    paramètres avancés</button>
             </div>
         </div>
 
@@ -615,7 +626,8 @@
                     <input type="text" id="coder-model-manual" placeholder="ex: qwen3.5:9b-16k" style="display: none;">
                     <button class="toggle-btn" id="coder-toggle-mode" onclick="toggleCoderManual()">Manuel</button>
                 </div>
-                <input type="text" id="coder-model-text" placeholder="ex: gpt-4o, claude-3-opus..." style="display: none;">
+                <input type="text" id="coder-model-text" placeholder="ex: gpt-4o, claude-3-opus..."
+                    style="display: none;">
             </div>
 
             <div class="field">
@@ -632,11 +644,13 @@
                         <option value="__manual__">✏️ Personnalisé...</option>
                     </select>
                 </div>
-                <input type="number" id="coder-tokens-manual" min="512" step="512" style="display: none; margin-top: 0.5rem;" placeholder="Saisir une valeur personnalisée">
+                <input type="number" id="coder-tokens-manual" min="512" step="512"
+                    style="display: none; margin-top: 0.5rem;" placeholder="Saisir une valeur personnalisée">
                 <p class="token-info">Les modèles plus grands acceptent un contexte plus important.</p>
             </div>
 
-            <button class="btn btn-primary" id="btn-coder-save" onclick="saveCoderConfig()">💾 Sauvegarder Coder</button>
+            <button class="btn btn-primary" id="btn-coder-save" onclick="saveCoderConfig()">💾 Sauvegarder
+                Coder</button>
         </div>
 
         <!-- Vision Agent Tab -->
@@ -662,7 +676,8 @@
                     <input type="text" id="vision-model-manual" placeholder="ex: llava" style="display: none;">
                     <button class="toggle-btn" id="vision-toggle-mode" onclick="toggleVisionManual()">Manuel</button>
                 </div>
-                <input type="text" id="vision-model-text" placeholder="ex: gpt-4-vision-preview..." style="display: none;">
+                <input type="text" id="vision-model-text" placeholder="ex: gpt-4-vision-preview..."
+                    style="display: none;">
             </div>
 
             <div class="field">
@@ -678,11 +693,13 @@
                         <option value="__manual__">✏️ Personnalisé...</option>
                     </select>
                 </div>
-                <input type="number" id="vision-tokens-manual" min="512" step="512" style="display: none; margin-top: 0.5rem;" placeholder="Saisir une valeur personnalisée">
+                <input type="number" id="vision-tokens-manual" min="512" step="512"
+                    style="display: none; margin-top: 0.5rem;" placeholder="Saisir une valeur personnalisée">
                 <p class="token-info">Pour l'analyse d'images et vision par ordinateur. Optionnel si non supporté.</p>
             </div>
 
-            <button class="btn btn-primary" id="btn-vision-save" onclick="saveVisionConfig()">💾 Sauvegarder Vision</button>
+            <button class="btn btn-primary" id="btn-vision-save" onclick="saveVisionConfig()">💾 Sauvegarder
+                Vision</button>
         </div>
 
         <!-- Settings Tab -->
@@ -690,7 +707,8 @@
             <!-- Providers Configuration Section -->
             <div class="settings-section">
                 <h3>🔌 Configuration des Providers</h3>
-                <p class="token-info" style="margin-bottom: 1rem;">Configurez les clés API et URLs pour chaque provider.</p>
+                <p class="token-info" style="margin-bottom: 1rem;">Configurez les clés API et URLs pour chaque provider.
+                </p>
 
                 <div class="field">
                     <label>Provider à configurer</label>
@@ -717,8 +735,10 @@
                         <input type="text" id="settings-extra-headers" placeholder='{"Header-Name": "value"}'>
                     </div>
 
-                    <button class="btn btn-primary" id="btn-save-provider" onclick="saveProviderConfig()">💾 Sauvegarder le provider</button>
-                    <button class="btn btn-danger" id="btn-delete-provider" onclick="deleteProviderConfig()" style="margin-left: 0.5rem;">🗑️ Supprimer</button>
+                    <button class="btn btn-primary" id="btn-save-provider" onclick="saveProviderConfig()">💾 Sauvegarder
+                        le provider</button>
+                    <button class="btn btn-danger" id="btn-delete-provider" onclick="deleteProviderConfig()"
+                        style="margin-left: 0.5rem;">🗑️ Supprimer</button>
                 </div>
             </div>
 
@@ -739,16 +759,26 @@
 
                 <p class="token-info">
                     <strong>Docker :</strong> Redémarre le container nanobot-gateway via l'API Docker.<br>
-                    <strong>Machine hôte :</strong> Redémarre le service via <code>systemctl --user restart nanobot-gateway</code>
+                    <strong>Machine hôte :</strong> Redémarre le service via
+                    <code>systemctl --user restart nanobot-gateway</code>
                 </p>
 
-                <button class="btn btn-primary" id="btn-settings-save" onclick="saveExecutionType()">💾 Sauvegarder les paramètres</button>
+                <button class="btn btn-primary" id="btn-settings-save" onclick="saveExecutionType()">💾 Sauvegarder les
+                    paramètres</button>
             </div>
 
             <!-- SSH Key Section -->
             <div class="settings-section">
                 <h3>🔑 Clé SSH (Mode Host)</h3>
-                <p class="token-info">Générez une clé SSH et copiez-la sur la machine hôte pour utiliser le mode Host.</p>
+                
+                <div class="ssh-instruction" style="background: #1e3a5f; border: 1px solid #3b82f6; border-radius: 8px; padding: 0.75rem; margin-bottom: 1rem;">
+                    <p style="font-size: 0.85rem; color: #93c5fd; margin-bottom: 0.5rem;">Pour autoriser la connexion SSH, exécutez cette commande sur la machine hôte :</p>
+                    <code id="ssh-authorize-cmd" style="display: block; background: #0f172a; padding: 0.5rem 0.75rem; border-radius: 4px; font-size: 0.8rem; color: #e2e8f0; word-break: break-all;">echo "INSERER_CLE_SSH_ICI" >> ~/.ssh/authorized_keys</code>
+                    <button class="btn btn-small copy-btn" onclick="copySshAuthCmd()" style="margin-top: 0.5rem; font-size: 0.75rem;">📋 Copier la commande</button>
+                </div>
+                
+                <p class="token-info">Générez une clé SSH et copiez-la sur la machine hôte pour utiliser le mode Host.
+                </p>
 
                 <div id="ssh-key-status">
                     <p class="token-info">Chargement...</p>
@@ -756,25 +786,32 @@
 
                 <div id="ssh-key-display" style="display: none;">
                     <div class="status-badge status-success">✅ Clé SSH générée</div>
-                    <p class="token-info" style="margin-top: 0.75rem;">Copiez cette clé publique et ajoutez-la à <code>~/.ssh/authorized_keys</code> sur la machine hôte :</p>
+                    <p class="token-info" style="margin-top: 0.75rem;">Copiez cette clé publique et ajoutez-la à
+                        <code>~/.ssh/authorized_keys</code> sur la machine hôte :
+                    </p>
                     <div class="ssh-key-box" id="ssh-public-key"></div>
                     <button class="btn btn-small copy-btn" onclick="copySshKey()">📋 Copier</button>
-                    <button class="btn btn-primary btn-small" onclick="regenerateSshKey()" style="margin-left: 0.5rem;">🔄 Régénérer</button>
+                    <button class="btn btn-primary btn-small" onclick="regenerateSshKey()"
+                        style="margin-left: 0.5rem;">🔄 Régénérer</button>
                 </div>
 
                 <div id="ssh-key-missing" style="display: none;">
                     <div class="status-badge status-error">⚠️ Clé SSH manquante</div>
-                    <p class="token-info" style="margin-top: 0.75rem;">Aucune clé SSH n'existe. Cliquez sur le bouton ci-dessous pour en générer une :</p>
-                    <button class="btn btn-primary" id="btn-generate-ssh" onclick="generateSshKey()" style="margin-top: 0.75rem;">🔑 Générer une clé SSH</button>
+                    <p class="token-info" style="margin-top: 0.75rem;">Aucune clé SSH n'existe. Cliquez sur le bouton
+                        ci-dessous pour en générer une :</p>
+                    <button class="btn btn-primary" id="btn-generate-ssh" onclick="generateSshKey()"
+                        style="margin-top: 0.75rem;">🔑 Générer une clé SSH</button>
                 </div>
             </div>
 
             <!-- Logs Section -->
             <div class="settings-section">
                 <h3>📜 Logs de nanobot-gateway</h3>
-                <p class="token-info">Affichage des 100 dernières lignes. Rafraîchissez la page pour obtenir les logs à jour.</p>
+                <p class="token-info">Affichage des 100 dernières lignes. Rafraîchissez la page pour obtenir les logs à
+                    jour.</p>
 
-                <button class="btn btn-primary btn-small" id="btn-refresh-logs" onclick="loadLogs()" style="margin-bottom: 0.75rem;">🔄 Rafraîchir les logs</button>
+                <button class="btn btn-primary btn-small" id="btn-refresh-logs" onclick="loadLogs()"
+                    style="margin-bottom: 0.75rem;">🔄 Rafraîchir les logs</button>
 
                 <div id="logs-container" class="logs-container">
                     <div class="logs-empty">Chargement des logs...</div>
@@ -786,8 +823,8 @@
         <button class="btn btn-danger" id="btn-restart" onclick="restartContainer()">🔄 Redémarrer Nanobot</button>
 
         <div id="toast" class="toast"></div>
-        
-        <div class="version-footer">nanobot-manager v0.9</div>
+
+        <div class="version-footer" id="version-footer">Chargement...</div>
     </div>
 
     <script>
@@ -816,7 +853,7 @@
         let manualMode = false;
         let providersList = [];
         const TOKEN_VALUES = [2048, 4096, 8192, 16384, 32768, 65536, 131072];
-        
+
         // Load providers on page load
         async function loadProviders() {
             try {
@@ -826,13 +863,13 @@
                 console.log('DEBUG JS: Received data:', data);
                 console.log('DEBUG JS: data.providers =', data.providers);
                 console.log('DEBUG JS: data.providers length =', data.providers ? data.providers.length : 'undefined');
-                
+
                 if (data.providers && Array.isArray(data.providers) && data.providers.length > 0) {
                     providersList = data.providers;
                     const select = document.getElementById('provider');
                     // Clear existing options except the placeholder
                     select.innerHTML = '<option value="" disabled selected>Choisir un provider...</option>';
-                    
+
                     data.providers.forEach(p => {
                         console.log('DEBUG JS: Adding provider:', p.name, 'configured:', p.configured);
                         const option = document.createElement('option');
@@ -858,24 +895,24 @@
             const providerData = providersList.find(p => p.name === provider);
             const warningBox = document.getElementById('provider-warning');
             const warningText = warningBox.querySelector('.warning-text');
-            
+
             if (providerData && !providerData.configured) {
                 warningBox.style.display = 'flex';
                 warningText.textContent = `Le provider "${provider}" n'est pas configuré. Veuillez ajouter votre clé API dans le fichier ~/.nanobot/config.json sous la section providers.${provider}.apiKey`;
             } else {
                 warningBox.style.display = 'none';
             }
-            
+
             // Handle model input based on provider
             const ollamaContainer = document.getElementById('model-ollama-container');
             const textInput = document.getElementById('model-text');
-            
+
             if (provider === 'ollama') {
                 // For Ollama, check if apiBase is configured
                 try {
                     const res = await fetch('/api/ollama-config');
                     const data = await res.json();
-                    
+
                     if (data.canFetchModels) {
                         // apiBase is configured, show dropdown with models
                         ollamaContainer.style.display = 'flex';
@@ -901,20 +938,20 @@
                 textInput.placeholder = `ex: modèle ${provider}`;
             }
         }
-        
+
         // Load Ollama models dynamically
         async function loadOllamaModels() {
             try {
                 const res = await fetch('/api/models');
                 const models = await res.json();
                 const select = document.getElementById('model-select');
-                
+
                 // Keep placeholder and manual option
                 select.innerHTML = `
                     <option value="" disabled selected>Choisir un modèle Ollama...</option>
                     <option value="__manual__">✏️ Saisir manuellement...</option>
                 `;
-                
+
                 // Add fetched models
                 models.forEach(m => {
                     const option = document.createElement('option');
@@ -957,7 +994,7 @@
         function getModel() {
             const provider = document.getElementById('provider').value;
             const ollamaContainer = document.getElementById('model-ollama-container');
-            
+
             if ((provider === 'ollama') && ollamaContainer.style.display !== 'none') {
                 // Ollama with dropdown (apiBase configured)
                 return manualMode ? modelManual.value.trim() : modelSelect.value;
@@ -999,19 +1036,19 @@
             try {
                 const res = await fetch('/api/config');
                 const data = await res.json();
-                
+
                 // Set provider
                 if (data.provider) {
                     const providerSelect = document.getElementById('provider');
                     providerSelect.value = data.provider;
                     await onProviderChange();
                 }
-                
+
                 // Set model after provider change has completed
                 if (data.model) {
                     const provider = data.provider;
                     const ollamaContainer = document.getElementById('model-ollama-container');
-                    
+
                     if (provider === 'ollama') {
                         // Check if we're showing dropdown or text input
                         if (ollamaContainer.style.display !== 'none') {
@@ -1038,7 +1075,7 @@
                         document.getElementById('model-text').value = data.model;
                     }
                 }
-                
+
                 // Set sliders
                 if (data.maxTokens) {
                     setMaxTokensSlider(data.maxTokens);
@@ -1046,7 +1083,7 @@
                 if (data.temperature !== undefined) {
                     setTemperatureSlider(data.temperature);
                 }
-                
+
                 // Update badge
                 document.getElementById('cur-provider').textContent = data.provider || '—';
                 document.getElementById('cur-model').textContent = data.model || '—';
@@ -1086,7 +1123,7 @@
             try {
                 const res = await fetch('/api/config/full');
                 const data = await res.json();
-                
+
                 if (data.agents && data.agents.defaults) {
                     const defaults = data.agents.defaults;
                     document.getElementById('adv-workspace').value = defaults.workspace || '~/.nanobot/workspace';
@@ -1144,16 +1181,16 @@
             const provider = document.getElementById('provider').value;
             const maxTokens = TOKEN_VALUES[parseInt(document.getElementById('maxtokens-slider').value)];
             const temperature = parseFloat(document.getElementById('temperature-value').textContent);
-            
+
             if (!provider) return showToast('Veuillez sélectionner un provider', 'error');
             if (!model) return showToast('Veuillez saisir un modèle', 'error');
-            
+
             // Check if provider is configured
             const providerData = providersList.find(p => p.name === provider);
             if (providerData && !providerData.configured) {
                 return showToast('Ce provider n\'est pas configuré. Veuillez d\'abord configurer la clé API.', 'error');
             }
-            
+
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner"></span>Sauvegarde...';
             try {
@@ -1183,7 +1220,23 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadProviders();
             loadDefaultConfig();
+            loadVersion();
         });
+
+        async function loadVersion() {
+            try {
+                const res = await fetch('/api/version');
+                const data = await res.json();
+                const footer = document.getElementById('version-footer');
+                let text = `nanobot-manager v${data.version}`;
+                if (data.author) {
+                    text += `<br><span style="font-size: 0.7rem;">${data.author}</span>`;
+                }
+                footer.innerHTML = text;
+            } catch (e) {
+                document.getElementById('version-footer').textContent = 'nanobot-manager';
+            }
+        }
 
         modelSelect.addEventListener('change', () => {
             if (modelSelect.value === '__manual__') switchToManual();
@@ -1287,7 +1340,7 @@
                 const data = await res.json();
                 const select = document.getElementById('coder-provider');
                 select.innerHTML = '<option value="" disabled selected>Choisir un provider...</option>';
-                
+
                 if (data.providers) {
                     data.providers.forEach(p => {
                         const option = document.createElement('option');
@@ -1306,7 +1359,7 @@
             const provider = document.getElementById('coder-provider').value;
             const ollamaContainer = document.getElementById('coder-model-ollama-container');
             const textInput = document.getElementById('coder-model-text');
-            
+
             if (provider === 'ollama') {
                 ollamaContainer.style.display = 'flex';
                 textInput.style.display = 'none';
@@ -1342,7 +1395,7 @@
             const select = document.getElementById('coder-model-select');
             const manual = document.getElementById('coder-model-manual');
             const btn = document.getElementById('coder-toggle-mode');
-            
+
             if (coderManualMode) {
                 coderManualMode = false;
                 select.style.display = 'block';
@@ -1360,9 +1413,9 @@
         function getCoderModel() {
             const provider = document.getElementById('coder-provider').value;
             const ollamaContainer = document.getElementById('coder-model-ollama-container');
-            
+
             if ((provider === 'ollama') && ollamaContainer.style.display !== 'none') {
-                return coderManualMode 
+                return coderManualMode
                     ? document.getElementById('coder-model-manual').value.trim()
                     : document.getElementById('coder-model-select').value;
             } else {
@@ -1377,12 +1430,12 @@
                 const data = await res.json();
                 document.getElementById('coder-provider').value = data.provider || '';
                 await onCoderProviderChange();
-                
+
                 const model = data.model || '';
                 if (model) {
                     const provider = data.provider;
                     const ollamaContainer = document.getElementById('coder-model-ollama-container');
-                    
+
                     if (provider === 'ollama') {
                         if (ollamaContainer.style.display !== 'none') {
                             const select = document.getElementById('coder-model-select');
@@ -1400,7 +1453,7 @@
                         document.getElementById('coder-model-text').value = model;
                     }
                 }
-                
+
                 document.getElementById('coder-tokens').value = data.maxTokens || 16384;
                 document.getElementById('coder-cur-provider').textContent = data.provider || '—';
                 document.getElementById('coder-cur-model').textContent = data.model || '—';
@@ -1450,7 +1503,7 @@
                 const data = await res.json();
                 const select = document.getElementById('vision-provider');
                 select.innerHTML = '<option value="" disabled selected>Choisir un provider...</option>';
-                
+
                 if (data.providers) {
                     data.providers.forEach(p => {
                         const option = document.createElement('option');
@@ -1469,7 +1522,7 @@
             const provider = document.getElementById('vision-provider').value;
             const ollamaContainer = document.getElementById('vision-model-ollama-container');
             const textInput = document.getElementById('vision-model-text');
-            
+
             if (provider === 'ollama') {
                 ollamaContainer.style.display = 'flex';
                 textInput.style.display = 'none';
@@ -1505,7 +1558,7 @@
             const select = document.getElementById('vision-model-select');
             const manual = document.getElementById('vision-model-manual');
             const btn = document.getElementById('vision-toggle-mode');
-            
+
             if (visionManualMode) {
                 visionManualMode = false;
                 select.style.display = 'block';
@@ -1523,9 +1576,9 @@
         function getVisionModel() {
             const provider = document.getElementById('vision-provider').value;
             const ollamaContainer = document.getElementById('vision-model-ollama-container');
-            
+
             if ((provider === 'ollama') && ollamaContainer.style.display !== 'none') {
-                return visionManualMode 
+                return visionManualMode
                     ? document.getElementById('vision-model-manual').value.trim()
                     : document.getElementById('vision-model-select').value;
             } else {
@@ -1540,12 +1593,12 @@
                 const data = await res.json();
                 document.getElementById('vision-provider').value = data.provider || '';
                 await onVisionProviderChange();
-                
+
                 const model = data.model || '';
                 if (model) {
                     const provider = data.provider;
                     const ollamaContainer = document.getElementById('vision-model-ollama-container');
-                    
+
                     if (provider === 'ollama') {
                         if (ollamaContainer.style.display !== 'none') {
                             const select = document.getElementById('vision-model-select');
@@ -1563,7 +1616,7 @@
                         document.getElementById('vision-model-text').value = model;
                     }
                 }
-                
+
                 if (data.maxTokens) {
                     document.getElementById('vision-tokens').value = data.maxTokens;
                 } else {
@@ -1617,10 +1670,10 @@
                 const res = await fetch('/api/providers');
                 const data = await res.json();
                 const select = document.getElementById('settings-provider-select');
-                
+
                 // Keep placeholder
                 select.innerHTML = '<option value="" disabled selected>Choisir un provider...</option>';
-                
+
                 if (data.providers) {
                     data.providers.forEach(p => {
                         const option = document.createElement('option');
@@ -1637,13 +1690,13 @@
         async function loadProviderConfig() {
             const provider = document.getElementById('settings-provider-select').value;
             if (!provider) return;
-            
+
             document.getElementById('provider-config-form').style.display = 'block';
-            
+
             try {
                 const res = await fetch('/api/config/full');
                 const data = await res.json();
-                
+
                 if (data.providers && data.providers[provider]) {
                     const config = data.providers[provider];
                     document.getElementById('settings-api-key').value = config.apiKey || '';
@@ -1666,12 +1719,12 @@
             const apiKey = document.getElementById('settings-api-key').value;
             const apiBase = document.getElementById('settings-api-base').value;
             const extraHeadersStr = document.getElementById('settings-extra-headers').value;
-            
+
             if (!provider) {
                 showToast('Veuillez sélectionner un provider', 'error');
                 return;
             }
-            
+
             let extraHeaders = null;
             if (extraHeadersStr.trim()) {
                 try {
@@ -1681,10 +1734,10 @@
                     return;
                 }
             }
-            
+
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner"></span>Sauvegarde...';
-            
+
             try {
                 const res = await fetch('/api/provider/config', {
                     method: 'POST',
@@ -1718,11 +1771,11 @@
                 showToast('Veuillez sélectionner un provider', 'error');
                 return;
             }
-            
+
             if (!confirm(`Êtes-vous sûr de vouloir supprimer la configuration du provider "${provider}" ?`)) {
                 return;
             }
-            
+
             try {
                 const res = await fetch('/api/provider/config', {
                     method: 'DELETE',
@@ -1796,15 +1849,36 @@
                     missing.style.display = 'none';
                     status.style.display = 'none';
                     document.getElementById('ssh-public-key').textContent = data.public_key;
+                    // Update the SSH authorize command placeholder
+                    updateSshAuthCmd(data.public_key);
                 } else {
                     display.style.display = 'none';
                     missing.style.display = 'block';
                     status.style.display = 'none';
+                    updateSshAuthCmd(null);
                 }
             } catch (e) {
                 console.error('Erreur SSH key:', e);
                 document.getElementById('ssh-key-status').innerHTML = '<div class="status-badge status-error">❌ Erreur</div>';
             }
+        }
+
+        function updateSshAuthCmd(publicKey) {
+            const cmdElement = document.getElementById('ssh-authorize-cmd');
+            if (publicKey) {
+                cmdElement.textContent = `echo "${publicKey}" >> ~/.ssh/authorized_keys`;
+            } else {
+                cmdElement.textContent = 'echo "INSERER_CLE_SSH_ICI" >> ~/.ssh/authorized_keys';
+            }
+        }
+
+        function copySshAuthCmd() {
+            const cmdText = document.getElementById('ssh-authorize-cmd').textContent;
+            navigator.clipboard.writeText(cmdText).then(() => {
+                showToast('✅ Commande copiée dans le presse-papiers', 'success');
+            }).catch(() => {
+                showToast('❌ Impossible de copier', 'error');
+            });
         }
 
         async function generateSshKey() {

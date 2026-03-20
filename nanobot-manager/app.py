@@ -990,5 +990,27 @@ def api_logs():
         ), 500
 
 
+@app.route("/api/version")
+def api_version():
+    """Get version information from VERSION.md."""
+    version_file = pathlib.Path(__file__).parent / "VERSION.md"
+    version = "0.9"
+    author = ""
+
+    if version_file.exists():
+        try:
+            content = version_file.read_text()
+            for line in content.split("\n"):
+                line = line.strip()
+                if line.startswith("**Version:**"):
+                    version = line.split(":")[1].strip()
+                elif line.startswith("Made with"):
+                    author = line
+        except Exception:
+            pass
+
+    return jsonify({"version": version, "author": author})
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=HTTP_PORT, debug=False)

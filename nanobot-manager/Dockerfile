@@ -23,6 +23,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
+COPY VERSION.md .
 COPY templates/ templates/
 
 # Set ownership
