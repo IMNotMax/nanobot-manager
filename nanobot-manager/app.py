@@ -408,9 +408,7 @@ def api_update():
 
         # Update only the provided fields to avoid breaking nanobot config
         config["agents"]["defaults"]["model"] = model
-        # Save "custom" in file for Ollama (nanobot convention)
-        provider_to_save = "custom" if provider.lower() == "ollama" else provider
-        config["agents"]["defaults"]["provider"] = provider_to_save
+        config["agents"]["defaults"]["provider"] = provider
 
         # Only update maxTokens and temperature if they exist in current config
         # This prevents breaking nanobot if these fields are not expected
