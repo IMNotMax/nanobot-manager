@@ -148,16 +148,27 @@ def write_manager_config(config):
 
 
 def get_ollama_url():
-    """Get Ollama URL from config or use default."""
+    """Get Ollama URL from config or use default.
+
+    Priority: providers.ollama.apiBase > providers.custom.apiBase > OLLAMA_URL env
+    """
     try:
         config = read_config()
         providers = config.get("providers", {})
+
+        # Check ollama provider first (most specific for Ollama)
+        ollama_config = providers.get("ollama", {})
+        api_base = ollama_config.get("apiBase", "")
+        if api_base and isinstance(api_base, str) and api_base.strip():
+            url = api_base.rstrip("/")
+            if url.endswith("/v1"):
+                url = url[:-3]
+            return url
+
+        # Fall back to custom provider
         custom_config = providers.get("custom", {})
         api_base = custom_config.get("apiBase", "")
-
-        # If apiBase is set and contains a URL, use it
         if api_base and isinstance(api_base, str) and api_base.strip():
-            # Remove trailing /v1 if present (nanobot format)
             url = api_base.rstrip("/")
             if url.endswith("/v1"):
                 url = url[:-3]
